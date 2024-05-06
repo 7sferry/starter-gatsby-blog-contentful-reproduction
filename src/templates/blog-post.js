@@ -1,7 +1,6 @@
 import React from 'react'
-import { Link, graphql } from 'gatsby'
+import { graphql, Link } from 'gatsby'
 import get from 'lodash/get'
-import { renderRichText } from 'gatsby-source-contentful/rich-text'
 import { documentToPlainTextString } from '@contentful/rich-text-plain-text-renderer'
 import { BLOCKS } from '@contentful/rich-text-types'
 import { GatsbyImage, getImage } from 'gatsby-plugin-image'
@@ -57,9 +56,6 @@ class BlogPostTemplate extends React.Component {
             {timeToRead} minute read
           </span>
           <div className={styles.article}>
-            <div className={styles.body}>
-              {post.body?.raw && renderRichText(post.body, options)}
-            </div>
             <Tags tags={post.tags} />
             {(previous || next) && (
               <nav>
@@ -93,39 +89,11 @@ export default BlogPostTemplate
 export const pageQuery = graphql`
   query BlogPostBySlug(
     $slug: String!
-    $previousPostSlug: String
-    $nextPostSlug: String
   ) {
     contentfulBlogPost(slug: { eq: $slug }) {
       slug
       title
-      author {
-        name
-      }
       publishDate(formatString: "MMMM Do, YYYY")
-      rawDate: publishDate
-      heroImage {
-        gatsbyImage(layout: FULL_WIDTH, placeholder: BLURRED, width: 1280)
-        resize(height: 630, width: 1200) {
-          src
-        }
-      }
-      body {
-        raw
-        
-      }
-      tags
-      description {
-        raw
-      }
-    }
-    previous: contentfulBlogPost(slug: { eq: $previousPostSlug }) {
-      slug
-      title
-    }
-    next: contentfulBlogPost(slug: { eq: $nextPostSlug }) {
-      slug
-      title
     }
   }
 `

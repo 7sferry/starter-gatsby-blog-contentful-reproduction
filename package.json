@@ -25,7 +25,8 @@
   "devDependencies": {
     "contentful-import": "^8.3.2",
     "gatsby-provision-contentful": "^0.0.5",
-    "netlify-cli": "^10.0.0"
+    "netlify-cli": "^10.0.0",
+    "dotenv": "^16.4.1"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -44,7 +45,7 @@
   },
   "scripts": {
     "dev": "gatsby develop",
-    "build": "gatsby build",
+    "build": "gatsby info --clipboard && gatsby build",
     "heroku-postbuild": "gatsby build",
     "serve": "gatsby serve",
     "postinstall": "node ./bin/hello.js",

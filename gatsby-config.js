@@ -1,6 +1,8 @@
-require("dotenv").config({
-  path: `.env.${process.env.NODE_ENV}`,
-});
+// import { config } from 'dotenv'
+
+// config();
+
+require('dotenv').config()
 
 module.exports = {
   siteMetadata: {
@@ -17,7 +19,7 @@ module.exports = {
       options: {
         spaceId: process.env.CONTENTFUL_SPACE_ID,
         accessToken: process.env.CONTENTFUL_ACCESS_TOKEN,
-        host: process.env.CONTENTFUL_HOST
+        host: 'cdn.contentful.com',
       },
     },
   ],
