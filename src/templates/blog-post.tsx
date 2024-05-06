@@ -7,22 +7,14 @@ import Layout from '../components/Layout'
 import './ignored/blockquote.css'
 import './ignored/index-ignored.css'
 import './ignored/prism.css'
-import {
-  getPlurals,
-  getPostTags,
-  getPublishDateTime,
-  isAfterDate,
-  kebabCase,
-  plusDays,
-  toNow,
-} from '../utils/GatsbyanUtils'
+import { getPlurals, getPostTags, getPublishDateTime, kebabCase } from '../utils/GatsbyanUtils'
 import React, { useEffect, useState } from 'react'
 import { graphql } from 'gatsby'
 import { GatsbyImage } from 'gatsby-plugin-image'
 import { BlogPostProp } from '../types/DataTypes'
 
 const BlogPostTemplate = (props: BlogPostProp) => {
-  const { contentfulBlogPost: post, site: siteProp } = props.data
+  const { contentfulContentTypeBlogPost: post, site: siteProp } = props.data
   const site = siteProp.siteMetadata
   const { childMarkdownRemark } = post.body
   const timeToRead = childMarkdownRemark.timeToRead
@@ -33,11 +25,11 @@ const BlogPostTemplate = (props: BlogPostProp) => {
   const imageTitle = heroImage?.title
   const htmlWithAnchor = extractHtmlWithAnchor(childMarkdownRemark.html)
   const publishDate = post.publishDate
-  const updatedAt = post.updatedAt
+  // const updatedAt = post.updatedAt
 
-  const showUpdatedText = () => {
-    return isClientRendered() && post.sys?.revision > 5 && isAfterDate(updatedAt, plusDays(publishDate, 30))
-  }
+  // const showUpdatedText = () => {
+  //   return isClientRendered() && post.sys?.revision > 5 && isAfterDate(updatedAt, plusDays(publishDate, 30))
+  // }
 
   return (
     <Layout>
@@ -48,7 +40,7 @@ const BlogPostTemplate = (props: BlogPostProp) => {
           <span className="page-info" style={{ display: 'inline-block' }}>
             {timeToRead} min{getPlurals(timeToRead)} read
           </span>
-          {showUpdatedText() && <span className="page-info">{`updated ${toNow(updatedAt)} ago`}</span>}
+          {/*{showUpdatedText() && <span className="page-info">{`updated ${toNow(updatedAt)} ago`}</span>}*/}
           <div className="page-info">{getPostTags(post.tags)}</div>
         </div>
         <div>
@@ -104,13 +96,13 @@ export default BlogPostTemplate
 
 export const pageQuery = graphql`
     query BlogPostBySlug($slug: String!) {
-        contentfulBlogPost(slug: { eq: $slug }) {
+        contentfulContentTypeBlogPost(slug: { eq: $slug }) {
             title
             publishDate
-            updatedAt
-            sys {
-                revision
-            }
+            #            updatedAt
+            #            sys {
+            #                revision
+            #            }
             lang
             body {
                 childMarkdownRemark {
@@ -118,9 +110,9 @@ export const pageQuery = graphql`
                     timeToRead
                 }
             }
-            description {
-                description
-            }
+            #            description {
+            #                description
+            #            }
             heroImage {
                 gatsbyImageData(
                     quality: 100
@@ -131,9 +123,9 @@ export const pageQuery = graphql`
                     sizes: "100vw"
                 )
                 title
-                file {
-                    url
-                }
+                #                file {
+                #                    url
+                #                }
             }
             tags
             slug

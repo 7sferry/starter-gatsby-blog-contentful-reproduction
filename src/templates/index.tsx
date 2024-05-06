@@ -14,7 +14,7 @@ import { IndexProp } from '../types/DataTypes'
 
 function IndexPage(props: IndexProp) {
   const { pageContext, data } = props
-  const { allContentfulBlogPost: contents } = data
+  const { allContentfulContentTypeBlogPost: contents } = data
   const { nodes: posts, pageInfo } = contents
   const kebabTag = pageContext.kebabTag
   const paginationUrl = kebabTag ? `/tags/${kebabTag}` : `/page`
@@ -70,7 +70,7 @@ function IndexPage(props: IndexProp) {
 
 export const pageQuery = graphql`
     query HomeQuery($skip: Int, $limit: Int, $tag: String) {
-        allContentfulBlogPost(skip: $skip, limit: $limit, sort: { publishDate: DESC }, filter: { tags: { eq: $tag } }) {
+        allContentfulContentTypeBlogPost(skip: $skip, limit: $limit, sort: { publishDate: DESC }, filter: { tags: { eq: $tag } }) {
             nodes {
                 slug
                 body {

@@ -14,7 +14,7 @@ export const createPages: GatsbyNode['createPages'] = ({ graphql, actions, repor
     resolve(
       graphql(`
           {
-              allContentfulBlogPost {
+              allContentfulContentTypeBlogPost {
                   nodes {
                       tags
                       slug
@@ -61,7 +61,7 @@ export const createPages: GatsbyNode['createPages'] = ({ graphql, actions, repor
 
         // const postSizeByTag = new Map<string, number>()
         const {
-          allContentfulBlogPost: { nodes: posts },
+          allContentfulContentTypeBlogPost: { nodes: posts },
         } = result.data
 
         posts.forEach((node) => {

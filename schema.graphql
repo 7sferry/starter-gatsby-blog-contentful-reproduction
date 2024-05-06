@@ -4,12 +4,18 @@ schema {
     query: Query
 }
 
+"Define authorization rules for this type."
+directive @authorization(
+    "A list of auth scopes that are allowed to access this type."
+    labels: [String!]! = []
+) on SCHEMA | OBJECT | FIELD_DEFINITION
+
 "Define parent-child relations between types. This is used to add `child*` and `children*` convenience fields like `childImageSharp`."
 directive @childOf(
     "A list of mime-types this type is a child of. Usually these are the mime-types handled by a transformer plugin."
     mimeTypes: [String!]! = [],
     "A list of types this type is a child of. Usually these are the types handled by a transformer plugin."
-    types: [String!]! = ["contentfulBlogPostDescriptionTextNode", "contentfulBlogPostBodyTextNode"]
+    types: [String!]! = ["ContentfulMarkdown"]
 ) on OBJECT
 
 "Add date formatting options."
@@ -44,18 +50,23 @@ directive @nodeInterface on INTERFACE
 "Proxy resolver from another field."
 directive @proxy(from: String!, fromNode: Boolean! = false) on FIELD_DEFINITION
 
-interface ContentfulEntry {
+interface ContentfulEntity {
     children: [Node!]!
-    contentful_id: String!
+    contentfulMetadata: ContentfulMetadata!
     id: ID!
     internal: Internal!
-    node_locale: String!
     parent: Node
+    sys: ContentfulSys!
 }
 
-interface ContentfulReference {
-    contentful_id: String!
+interface ContentfulEntry {
+    children: [Node!]!
+    contentfulMetadata: ContentfulMetadata!
     id: ID!
+    internal: Internal!
+    linkedFrom: ContentfulLinkedFrom
+    parent: Node
+    sys: ContentfulSys!
 }
 
 "Node Interface"
@@ -164,21 +175,11 @@ interface RemoteFile {
     width: Int
 }
 
-type ContentfulAsset implements ContentfulReference & Node & RemoteFile {
+type ContentfulAsset implements ContentfulEntity & Node & RemoteFile {
     children: [Node!]!
-    contentful_id: String!
-    createdAt(
-        "Returns the difference between this date and the current time. Defaults to \"milliseconds\" but you can also pass in as the measurement \"years\", \"months\", \"weeks\", \"days\", \"hours\", \"minutes\", and \"seconds\"."
-        difference: String,
-        "Format the date using Moment.js' date tokens, e.g. `date(formatString: \"YYYY MMMM DD\")`. See https://momentjs.com/docs/#/displaying/format/ for documentation for different tokens."
-        formatString: String,
-        "Returns a string generated with Moment.js' `fromNow` function"
-        fromNow: Boolean,
-        "Configures the locale Moment.js will use to format the date."
-        locale: String
-    ): Date
+    contentType: String!
+    contentfulMetadata: ContentfulMetadata!
     description: String
-    file: ContentfulAssetFile
     filename: String!
     filesize: Int
     "Data used in the <GatsbyImage /> component. See https://gatsby.dev/img for more info."
@@ -309,7 +310,7 @@ type ContentfulAsset implements ContentfulReference & Node & RemoteFile {
         NONE: no placeholder. Set the argument "backgroundColor" to use a fixed background color.
         """
         placeholder: GatsbyImagePlaceholder,
-        quality: Int,
+        quality: Int = 50,
         resizingBehavior: ImageResizingBehavior,
         """
 
@@ -325,14 +326,13 @@ type ContentfulAsset implements ContentfulReference & Node & RemoteFile {
         Ignored if layout = FLUID.
         """
         width: Int
-    ): GatsbyImageData
+    ): JSON
     height: Int
     id: ID!
     internal: Internal!
+    linkedFrom: ContentfulLinkedFrom
     mimeType: String!
-    node_locale: String
     parent: Node
-    placeholderUrl: String
     publicUrl: String!
     resize(
         aspectRatio: Float,
@@ -351,20 +351,9 @@ type ContentfulAsset implements ContentfulReference & Node & RemoteFile {
         width: Int
     ): RemoteFileResize
     size: Int
-    spaceId: String
-    sys: ContentfulAssetSys
+    sys: ContentfulSys!
     title: String
-    updatedAt(
-        "Returns the difference between this date and the current time. Defaults to \"milliseconds\" but you can also pass in as the measurement \"years\", \"months\", \"weeks\", \"days\", \"hours\", \"minutes\", and \"seconds\"."
-        difference: String,
-        "Format the date using Moment.js' date tokens, e.g. `date(formatString: \"YYYY MMMM DD\")`. See https://momentjs.com/docs/#/displaying/format/ for documentation for different tokens."
-        formatString: String,
-        "Returns a string generated with Moment.js' `fromNow` function"
-        fromNow: Boolean,
-        "Configures the locale Moment.js will use to format the date."
-        locale: String
-    ): Date
-    url: String
+    url: String!
     width: Int
 }
 
@@ -386,23 +375,6 @@ type ContentfulAssetEdge {
     previous: ContentfulAsset
 }
 
-type ContentfulAssetFile {
-    contentType: String
-    details: ContentfulAssetFileDetails
-    fileName: String
-    url: String
-}
-
-type ContentfulAssetFileDetails {
-    image: ContentfulAssetFileDetailsImage
-    size: Int
-}
-
-type ContentfulAssetFileDetailsImage {
-    height: Int
-    width: Int
-}
-
 type ContentfulAssetGroupConnection {
     distinct(field: ContentfulAssetFieldSelector!): [String!]!
     edges: [ContentfulAssetEdge!]!
@@ -417,39 +389,32 @@ type ContentfulAssetGroupConnection {
     totalCount: Int!
 }
 
-type ContentfulAssetSys {
-    revision: Int
-    type: String
+type ContentfulContentType implements Node {
+    children: [Node!]!
+    description: String!
+    displayField: String!
+    id: ID!
+    internal: Internal!
+    name: String!
+    parent: Node
 }
 
-type ContentfulBlogPost implements ContentfulEntry & ContentfulReference & Node {
-    body: contentfulBlogPostBodyTextNode
-    "Returns the first child node of type contentfulBlogPostBodyTextNode or null if there are no children of given type on this node"
-    childContentfulBlogPostBodyTextNode: contentfulBlogPostBodyTextNode
-    "Returns the first child node of type contentfulBlogPostDescriptionTextNode or null if there are no children of given type on this node"
-    childContentfulBlogPostDescriptionTextNode: contentfulBlogPostDescriptionTextNode
+type ContentfulContentTypeBlogPost implements ContentfulEntity & ContentfulEntry & Node {
+    body: ContentfulMarkdown
+    "Returns the first child node of type ContentfulMarkdown or null if there are no children of given type on this node"
+    childContentfulMarkdown: ContentfulMarkdown
     children: [Node!]!
-    "Returns all children nodes filtered by type contentfulBlogPostBodyTextNode"
-    childrenContentfulBlogPostBodyTextNode: [contentfulBlogPostBodyTextNode]
-    "Returns all children nodes filtered by type contentfulBlogPostDescriptionTextNode"
-    childrenContentfulBlogPostDescriptionTextNode: [contentfulBlogPostDescriptionTextNode]
-    contentful_id: String!
-    createdAt(
-        "Returns the difference between this date and the current time. Defaults to \"milliseconds\" but you can also pass in as the measurement \"years\", \"months\", \"weeks\", \"days\", \"hours\", \"minutes\", and \"seconds\"."
-        difference: String,
-        "Format the date using Moment.js' date tokens, e.g. `date(formatString: \"YYYY MMMM DD\")`. See https://momentjs.com/docs/#/displaying/format/ for documentation for different tokens."
-        formatString: String,
-        "Returns a string generated with Moment.js' `fromNow` function"
-        fromNow: Boolean,
-        "Configures the locale Moment.js will use to format the date."
-        locale: String
-    ): Date
-    description: contentfulBlogPostDescriptionTextNode
+    "Returns all children nodes filtered by type ContentfulMarkdown"
+    childrenContentfulMarkdown: [ContentfulMarkdown]
+    contentfulMetadata: ContentfulMetadata!
+    description: ContentfulMarkdown
     heroImage: ContentfulAsset
     id: ID!
     internal: Internal!
     lang: [String]
-    node_locale: String!
+    linkedFrom: ContentfulLinkedFrom
+    media: [ContentfulAsset]
+    paragraph: ContentfulRichText
     parent: Node
     publishDate(
         "Returns the difference between this date and the current time. Defaults to \"milliseconds\" but you can also pass in as the measurement \"years\", \"months\", \"weeks\", \"days\", \"hours\", \"minutes\", and \"seconds\"."
@@ -463,78 +428,41 @@ type ContentfulBlogPost implements ContentfulEntry & ContentfulReference & Node 
     ): Date
     rating: Int
     slug: String
-    spaceId: String
-    sys: ContentfulBlogPostSys
+    sys: ContentfulSys!
     tags: [String]
     title: String
-    updatedAt(
-        "Returns the difference between this date and the current time. Defaults to \"milliseconds\" but you can also pass in as the measurement \"years\", \"months\", \"weeks\", \"days\", \"hours\", \"minutes\", and \"seconds\"."
-        difference: String,
-        "Format the date using Moment.js' date tokens, e.g. `date(formatString: \"YYYY MMMM DD\")`. See https://momentjs.com/docs/#/displaying/format/ for documentation for different tokens."
-        formatString: String,
-        "Returns a string generated with Moment.js' `fromNow` function"
-        fromNow: Boolean,
-        "Configures the locale Moment.js will use to format the date."
-        locale: String
-    ): Date
 }
 
-type ContentfulBlogPostConnection {
-    distinct(field: ContentfulBlogPostFieldSelector!): [String!]!
-    edges: [ContentfulBlogPostEdge!]!
-    group(field: ContentfulBlogPostFieldSelector!, limit: Int, skip: Int): [ContentfulBlogPostGroupConnection!]!
-    max(field: ContentfulBlogPostFieldSelector!): Float
-    min(field: ContentfulBlogPostFieldSelector!): Float
-    nodes: [ContentfulBlogPost!]!
+type ContentfulContentTypeBlogPostConnection {
+    distinct(field: ContentfulContentTypeBlogPostFieldSelector!): [String!]!
+    edges: [ContentfulContentTypeBlogPostEdge!]!
+    group(field: ContentfulContentTypeBlogPostFieldSelector!, limit: Int, skip: Int): [ContentfulContentTypeBlogPostGroupConnection!]!
+    max(field: ContentfulContentTypeBlogPostFieldSelector!): Float
+    min(field: ContentfulContentTypeBlogPostFieldSelector!): Float
+    nodes: [ContentfulContentTypeBlogPost!]!
     pageInfo: PageInfo!
-    sum(field: ContentfulBlogPostFieldSelector!): Float
+    sum(field: ContentfulContentTypeBlogPostFieldSelector!): Float
     totalCount: Int!
 }
 
-type ContentfulBlogPostEdge {
-    next: ContentfulBlogPost
-    node: ContentfulBlogPost!
-    previous: ContentfulBlogPost
+type ContentfulContentTypeBlogPostEdge {
+    next: ContentfulContentTypeBlogPost
+    node: ContentfulContentTypeBlogPost!
+    previous: ContentfulContentTypeBlogPost
 }
 
-type ContentfulBlogPostGroupConnection {
-    distinct(field: ContentfulBlogPostFieldSelector!): [String!]!
-    edges: [ContentfulBlogPostEdge!]!
+type ContentfulContentTypeBlogPostGroupConnection {
+    distinct(field: ContentfulContentTypeBlogPostFieldSelector!): [String!]!
+    edges: [ContentfulContentTypeBlogPostEdge!]!
     field: String!
     fieldValue: String
-    group(field: ContentfulBlogPostFieldSelector!, limit: Int, skip: Int): [ContentfulBlogPostGroupConnection!]!
-    max(field: ContentfulBlogPostFieldSelector!): Float
-    min(field: ContentfulBlogPostFieldSelector!): Float
-    nodes: [ContentfulBlogPost!]!
+    group(field: ContentfulContentTypeBlogPostFieldSelector!, limit: Int, skip: Int): [ContentfulContentTypeBlogPostGroupConnection!]!
+    max(field: ContentfulContentTypeBlogPostFieldSelector!): Float
+    min(field: ContentfulContentTypeBlogPostFieldSelector!): Float
+    nodes: [ContentfulContentTypeBlogPost!]!
     pageInfo: PageInfo!
-    sum(field: ContentfulBlogPostFieldSelector!): Float
+    sum(field: ContentfulContentTypeBlogPostFieldSelector!): Float
     totalCount: Int!
-}
-
-type ContentfulBlogPostSys {
-    contentType: ContentfulBlogPostSysContentType
-    revision: Int
-    type: String
-}
-
-type ContentfulBlogPostSysContentType {
-    sys: ContentfulBlogPostSysContentTypeSys
-}
-
-type ContentfulBlogPostSysContentTypeSys {
-    id: String
-    linkType: String
-    type: String
-}
-
-type ContentfulContentType implements Node {
-    children: [Node!]!
-    displayField: String
-    id: ID!
-    internal: Internal!
-    name: String
-    parent: Node
-    sys: ContentfulContentTypeSys
 }
 
 type ContentfulContentTypeConnection {
@@ -569,8 +497,81 @@ type ContentfulContentTypeGroupConnection {
     totalCount: Int!
 }
 
-type ContentfulContentTypeSys {
-    type: String
+type ContentfulContentTypeImageWithFocalPoint implements ContentfulEntity & ContentfulEntry & Node {
+    children: [Node!]!
+    contentfulMetadata: ContentfulMetadata!
+    focalPoint: JSON
+    id: ID!
+    image: ContentfulAsset
+    internal: Internal!
+    linkedFrom: ContentfulLinkedFrom
+    parent: Node
+    sys: ContentfulSys!
+    title: String
+}
+
+type ContentfulContentTypeImageWithFocalPointConnection {
+    distinct(field: ContentfulContentTypeImageWithFocalPointFieldSelector!): [String!]!
+    edges: [ContentfulContentTypeImageWithFocalPointEdge!]!
+    group(field: ContentfulContentTypeImageWithFocalPointFieldSelector!, limit: Int, skip: Int): [ContentfulContentTypeImageWithFocalPointGroupConnection!]!
+    max(field: ContentfulContentTypeImageWithFocalPointFieldSelector!): Float
+    min(field: ContentfulContentTypeImageWithFocalPointFieldSelector!): Float
+    nodes: [ContentfulContentTypeImageWithFocalPoint!]!
+    pageInfo: PageInfo!
+    sum(field: ContentfulContentTypeImageWithFocalPointFieldSelector!): Float
+    totalCount: Int!
+}
+
+type ContentfulContentTypeImageWithFocalPointEdge {
+    next: ContentfulContentTypeImageWithFocalPoint
+    node: ContentfulContentTypeImageWithFocalPoint!
+    previous: ContentfulContentTypeImageWithFocalPoint
+}
+
+type ContentfulContentTypeImageWithFocalPointGroupConnection {
+    distinct(field: ContentfulContentTypeImageWithFocalPointFieldSelector!): [String!]!
+    edges: [ContentfulContentTypeImageWithFocalPointEdge!]!
+    field: String!
+    fieldValue: String
+    group(field: ContentfulContentTypeImageWithFocalPointFieldSelector!, limit: Int, skip: Int): [ContentfulContentTypeImageWithFocalPointGroupConnection!]!
+    max(field: ContentfulContentTypeImageWithFocalPointFieldSelector!): Float
+    min(field: ContentfulContentTypeImageWithFocalPointFieldSelector!): Float
+    nodes: [ContentfulContentTypeImageWithFocalPoint!]!
+    pageInfo: PageInfo!
+    sum(field: ContentfulContentTypeImageWithFocalPointFieldSelector!): Float
+    totalCount: Int!
+}
+
+type ContentfulEntityConnection {
+    distinct(field: ContentfulEntityFieldSelector!): [String!]!
+    edges: [ContentfulEntityEdge!]!
+    group(field: ContentfulEntityFieldSelector!, limit: Int, skip: Int): [ContentfulEntityGroupConnection!]!
+    max(field: ContentfulEntityFieldSelector!): Float
+    min(field: ContentfulEntityFieldSelector!): Float
+    nodes: [ContentfulEntity!]!
+    pageInfo: PageInfo!
+    sum(field: ContentfulEntityFieldSelector!): Float
+    totalCount: Int!
+}
+
+type ContentfulEntityEdge {
+    next: ContentfulEntity
+    node: ContentfulEntity!
+    previous: ContentfulEntity
+}
+
+type ContentfulEntityGroupConnection {
+    distinct(field: ContentfulEntityFieldSelector!): [String!]!
+    edges: [ContentfulEntityEdge!]!
+    field: String!
+    fieldValue: String
+    group(field: ContentfulEntityFieldSelector!, limit: Int, skip: Int): [ContentfulEntityGroupConnection!]!
+    max(field: ContentfulEntityFieldSelector!): Float
+    min(field: ContentfulEntityFieldSelector!): Float
+    nodes: [ContentfulEntity!]!
+    pageInfo: PageInfo!
+    sum(field: ContentfulEntityFieldSelector!): Float
+    totalCount: Int!
 }
 
 type ContentfulEntryConnection {
@@ -605,44 +606,170 @@ type ContentfulEntryGroupConnection {
     totalCount: Int!
 }
 
-type ContentfulImageWithFocalPoint implements ContentfulEntry & ContentfulReference & Node {
+type ContentfulLinkedFrom {
+    ContentfulContentTypeBlogPost: [ContentfulContentTypeBlogPost]
+    ContentfulContentTypeImageWithFocalPoint: [ContentfulContentTypeImageWithFocalPoint]
+}
+
+type ContentfulLocation {
+    lat: Float!
+    lon: Float!
+}
+
+type ContentfulMarkdown implements Node {
+    "Returns the first child node of type MarkdownRemark or null if there are no children of given type on this node"
+    childMarkdownRemark: MarkdownRemark
+    children: [Node!]!
+    "Returns all children nodes filtered by type MarkdownRemark"
+    childrenMarkdownRemark: [MarkdownRemark]
+    id: ID!
+    internal: Internal!
+    parent: Node
+    raw: String!
+}
+
+type ContentfulMarkdownConnection {
+    distinct(field: ContentfulMarkdownFieldSelector!): [String!]!
+    edges: [ContentfulMarkdownEdge!]!
+    group(field: ContentfulMarkdownFieldSelector!, limit: Int, skip: Int): [ContentfulMarkdownGroupConnection!]!
+    max(field: ContentfulMarkdownFieldSelector!): Float
+    min(field: ContentfulMarkdownFieldSelector!): Float
+    nodes: [ContentfulMarkdown!]!
+    pageInfo: PageInfo!
+    sum(field: ContentfulMarkdownFieldSelector!): Float
+    totalCount: Int!
+}
+
+type ContentfulMarkdownEdge {
+    next: ContentfulMarkdown
+    node: ContentfulMarkdown!
+    previous: ContentfulMarkdown
+}
+
+type ContentfulMarkdownGroupConnection {
+    distinct(field: ContentfulMarkdownFieldSelector!): [String!]!
+    edges: [ContentfulMarkdownEdge!]!
+    field: String!
+    fieldValue: String
+    group(field: ContentfulMarkdownFieldSelector!, limit: Int, skip: Int): [ContentfulMarkdownGroupConnection!]!
+    max(field: ContentfulMarkdownFieldSelector!): Float
+    min(field: ContentfulMarkdownFieldSelector!): Float
+    nodes: [ContentfulMarkdown!]!
+    pageInfo: PageInfo!
+    sum(field: ContentfulMarkdownFieldSelector!): Float
+    totalCount: Int!
+}
+
+type ContentfulMetadata {
+    tags: [ContentfulTag]!
+}
+
+type ContentfulRichText {
+    json: JSON
+    links: ContentfulRichTextLinks
+}
+
+type ContentfulRichTextAssets {
+    block: [ContentfulAsset]!
+    hyperlink: [ContentfulAsset]!
+}
+
+type ContentfulRichTextEntries {
+    block: [ContentfulEntry]!
+    hyperlink: [ContentfulEntry]!
+    inline: [ContentfulEntry]!
+}
+
+type ContentfulRichTextLinks {
+    assets: ContentfulRichTextAssets
+    entries: ContentfulRichTextEntries
+}
+
+type ContentfulSys implements Node {
+    children: [Node!]!
+    contentType: ContentfulContentType
+    environmentId: String!
+    firstPublishedAt: Date!
+    id: ID!
+    internal: Internal!
+    locale: String!
+    parent: Node
+    publishedAt: Date!
+    publishedVersion: Int!
+    spaceId: String!
+    type: String!
+}
+
+type ContentfulSysConnection {
+    distinct(field: ContentfulSysFieldSelector!): [String!]!
+    edges: [ContentfulSysEdge!]!
+    group(field: ContentfulSysFieldSelector!, limit: Int, skip: Int): [ContentfulSysGroupConnection!]!
+    max(field: ContentfulSysFieldSelector!): Float
+    min(field: ContentfulSysFieldSelector!): Float
+    nodes: [ContentfulSys!]!
+    pageInfo: PageInfo!
+    sum(field: ContentfulSysFieldSelector!): Float
+    totalCount: Int!
+}
+
+type ContentfulSysEdge {
+    next: ContentfulSys
+    node: ContentfulSys!
+    previous: ContentfulSys
+}
+
+type ContentfulSysGroupConnection {
+    distinct(field: ContentfulSysFieldSelector!): [String!]!
+    edges: [ContentfulSysEdge!]!
+    field: String!
+    fieldValue: String
+    group(field: ContentfulSysFieldSelector!, limit: Int, skip: Int): [ContentfulSysGroupConnection!]!
+    max(field: ContentfulSysFieldSelector!): Float
+    min(field: ContentfulSysFieldSelector!): Float
+    nodes: [ContentfulSys!]!
+    pageInfo: PageInfo!
+    sum(field: ContentfulSysFieldSelector!): Float
+    totalCount: Int!
+}
+
+type ContentfulTag implements Node {
     children: [Node!]!
     contentful_id: String!
     id: ID!
     internal: Internal!
-    node_locale: String!
+    name: String!
     parent: Node
 }
 
-type ContentfulImageWithFocalPointConnection {
-    distinct(field: ContentfulImageWithFocalPointFieldSelector!): [String!]!
-    edges: [ContentfulImageWithFocalPointEdge!]!
-    group(field: ContentfulImageWithFocalPointFieldSelector!, limit: Int, skip: Int): [ContentfulImageWithFocalPointGroupConnection!]!
-    max(field: ContentfulImageWithFocalPointFieldSelector!): Float
-    min(field: ContentfulImageWithFocalPointFieldSelector!): Float
-    nodes: [ContentfulImageWithFocalPoint!]!
+type ContentfulTagConnection {
+    distinct(field: ContentfulTagFieldSelector!): [String!]!
+    edges: [ContentfulTagEdge!]!
+    group(field: ContentfulTagFieldSelector!, limit: Int, skip: Int): [ContentfulTagGroupConnection!]!
+    max(field: ContentfulTagFieldSelector!): Float
+    min(field: ContentfulTagFieldSelector!): Float
+    nodes: [ContentfulTag!]!
     pageInfo: PageInfo!
-    sum(field: ContentfulImageWithFocalPointFieldSelector!): Float
+    sum(field: ContentfulTagFieldSelector!): Float
     totalCount: Int!
 }
 
-type ContentfulImageWithFocalPointEdge {
-    next: ContentfulImageWithFocalPoint
-    node: ContentfulImageWithFocalPoint!
-    previous: ContentfulImageWithFocalPoint
+type ContentfulTagEdge {
+    next: ContentfulTag
+    node: ContentfulTag!
+    previous: ContentfulTag
 }
 
-type ContentfulImageWithFocalPointGroupConnection {
-    distinct(field: ContentfulImageWithFocalPointFieldSelector!): [String!]!
-    edges: [ContentfulImageWithFocalPointEdge!]!
+type ContentfulTagGroupConnection {
+    distinct(field: ContentfulTagFieldSelector!): [String!]!
+    edges: [ContentfulTagEdge!]!
     field: String!
     fieldValue: String
-    group(field: ContentfulImageWithFocalPointFieldSelector!, limit: Int, skip: Int): [ContentfulImageWithFocalPointGroupConnection!]!
-    max(field: ContentfulImageWithFocalPointFieldSelector!): Float
-    min(field: ContentfulImageWithFocalPointFieldSelector!): Float
-    nodes: [ContentfulImageWithFocalPoint!]!
+    group(field: ContentfulTagFieldSelector!, limit: Int, skip: Int): [ContentfulTagGroupConnection!]!
+    max(field: ContentfulTagFieldSelector!): Float
+    min(field: ContentfulTagFieldSelector!): Float
+    nodes: [ContentfulTag!]!
     pageInfo: PageInfo!
-    sum(field: ContentfulImageWithFocalPointFieldSelector!): Float
+    sum(field: ContentfulTagFieldSelector!): Float
     totalCount: Int!
 }
 
@@ -1204,12 +1331,14 @@ type PageInfo {
 
 type Query {
     allContentfulAsset(filter: ContentfulAssetFilterInput, limit: Int, skip: Int, sort: [ContentfulAssetSortInput]): ContentfulAssetConnection!
-    allContentfulBlogPost(filter: ContentfulBlogPostFilterInput, limit: Int, skip: Int, sort: [ContentfulBlogPostSortInput]): ContentfulBlogPostConnection!
-    allContentfulBlogPostBodyTextNode(filter: contentfulBlogPostBodyTextNodeFilterInput, limit: Int, skip: Int, sort: [contentfulBlogPostBodyTextNodeSortInput]): contentfulBlogPostBodyTextNodeConnection!
-    allContentfulBlogPostDescriptionTextNode(filter: contentfulBlogPostDescriptionTextNodeFilterInput, limit: Int, skip: Int, sort: [contentfulBlogPostDescriptionTextNodeSortInput]): contentfulBlogPostDescriptionTextNodeConnection!
     allContentfulContentType(filter: ContentfulContentTypeFilterInput, limit: Int, skip: Int, sort: [ContentfulContentTypeSortInput]): ContentfulContentTypeConnection!
+    allContentfulContentTypeBlogPost(filter: ContentfulContentTypeBlogPostFilterInput, limit: Int, skip: Int, sort: [ContentfulContentTypeBlogPostSortInput]): ContentfulContentTypeBlogPostConnection!
+    allContentfulContentTypeImageWithFocalPoint(filter: ContentfulContentTypeImageWithFocalPointFilterInput, limit: Int, skip: Int, sort: [ContentfulContentTypeImageWithFocalPointSortInput]): ContentfulContentTypeImageWithFocalPointConnection!
+    allContentfulEntity(filter: ContentfulEntityFilterInput, limit: Int, skip: Int, sort: [ContentfulEntitySortInput]): ContentfulEntityConnection!
     allContentfulEntry(filter: ContentfulEntryFilterInput, limit: Int, skip: Int, sort: [ContentfulEntrySortInput]): ContentfulEntryConnection!
-    allContentfulImageWithFocalPoint(filter: ContentfulImageWithFocalPointFilterInput, limit: Int, skip: Int, sort: [ContentfulImageWithFocalPointSortInput]): ContentfulImageWithFocalPointConnection!
+    allContentfulMarkdown(filter: ContentfulMarkdownFilterInput, limit: Int, skip: Int, sort: [ContentfulMarkdownSortInput]): ContentfulMarkdownConnection!
+    allContentfulSys(filter: ContentfulSysFilterInput, limit: Int, skip: Int, sort: [ContentfulSysSortInput]): ContentfulSysConnection!
+    allContentfulTag(filter: ContentfulTagFilterInput, limit: Int, skip: Int, sort: [ContentfulTagSortInput]): ContentfulTagConnection!
     allDirectory(filter: DirectoryFilterInput, limit: Int, skip: Int, sort: [DirectorySortInput]): DirectoryConnection!
     allFile(filter: FileFilterInput, limit: Int, skip: Int, sort: [FileSortInput]): FileConnection!
     allImageSharp(filter: ImageSharpFilterInput, limit: Int, skip: Int, sort: [ImageSharpSortInput]): ImageSharpConnection!
@@ -1219,13 +1348,15 @@ type Query {
     allSiteFunction(filter: SiteFunctionFilterInput, limit: Int, skip: Int, sort: [SiteFunctionSortInput]): SiteFunctionConnection!
     allSitePage(filter: SitePageFilterInput, limit: Int, skip: Int, sort: [SitePageSortInput]): SitePageConnection!
     allSitePlugin(filter: SitePluginFilterInput, limit: Int, skip: Int, sort: [SitePluginSortInput]): SitePluginConnection!
-    contentfulAsset(children: NodeFilterListInput, contentful_id: StringQueryOperatorInput, createdAt: DateQueryOperatorInput, description: StringQueryOperatorInput, file: ContentfulAssetFileFilterInput, filename: StringQueryOperatorInput, filesize: IntQueryOperatorInput, gatsbyImage: GatsbyImageDataQueryOperatorInput, gatsbyImageData: GatsbyImageDataQueryOperatorInput, height: IntQueryOperatorInput, id: StringQueryOperatorInput, internal: InternalFilterInput, mimeType: StringQueryOperatorInput, node_locale: StringQueryOperatorInput, parent: NodeFilterInput, placeholderUrl: StringQueryOperatorInput, publicUrl: StringQueryOperatorInput, resize: RemoteFileResizeFilterInput, size: IntQueryOperatorInput, spaceId: StringQueryOperatorInput, sys: ContentfulAssetSysFilterInput, title: StringQueryOperatorInput, updatedAt: DateQueryOperatorInput, url: StringQueryOperatorInput, width: IntQueryOperatorInput): ContentfulAsset
-    contentfulBlogPost(body: contentfulBlogPostBodyTextNodeFilterInput, childContentfulBlogPostBodyTextNode: contentfulBlogPostBodyTextNodeFilterInput, childContentfulBlogPostDescriptionTextNode: contentfulBlogPostDescriptionTextNodeFilterInput, children: NodeFilterListInput, childrenContentfulBlogPostBodyTextNode: contentfulBlogPostBodyTextNodeFilterListInput, childrenContentfulBlogPostDescriptionTextNode: contentfulBlogPostDescriptionTextNodeFilterListInput, contentful_id: StringQueryOperatorInput, createdAt: DateQueryOperatorInput, description: contentfulBlogPostDescriptionTextNodeFilterInput, heroImage: ContentfulAssetFilterInput, id: StringQueryOperatorInput, internal: InternalFilterInput, lang: StringQueryOperatorInput, node_locale: StringQueryOperatorInput, parent: NodeFilterInput, publishDate: DateQueryOperatorInput, rating: IntQueryOperatorInput, slug: StringQueryOperatorInput, spaceId: StringQueryOperatorInput, sys: ContentfulBlogPostSysFilterInput, tags: StringQueryOperatorInput, title: StringQueryOperatorInput, updatedAt: DateQueryOperatorInput): ContentfulBlogPost
-    contentfulBlogPostBodyTextNode(body: StringQueryOperatorInput, childMarkdownRemark: MarkdownRemarkFilterInput, children: NodeFilterListInput, childrenMarkdownRemark: MarkdownRemarkFilterListInput, id: StringQueryOperatorInput, internal: InternalFilterInput, parent: NodeFilterInput, sys: contentfulBlogPostBodyTextNodeSysFilterInput): contentfulBlogPostBodyTextNode
-    contentfulBlogPostDescriptionTextNode(childMarkdownRemark: MarkdownRemarkFilterInput, children: NodeFilterListInput, childrenMarkdownRemark: MarkdownRemarkFilterListInput, description: StringQueryOperatorInput, id: StringQueryOperatorInput, internal: InternalFilterInput, parent: NodeFilterInput, sys: contentfulBlogPostDescriptionTextNodeSysFilterInput): contentfulBlogPostDescriptionTextNode
-    contentfulContentType(children: NodeFilterListInput, displayField: StringQueryOperatorInput, id: StringQueryOperatorInput, internal: InternalFilterInput, name: StringQueryOperatorInput, parent: NodeFilterInput, sys: ContentfulContentTypeSysFilterInput): ContentfulContentType
-    contentfulEntry(children: NodeFilterListInput, contentful_id: StringQueryOperatorInput, id: StringQueryOperatorInput, internal: InternalFilterInput, node_locale: StringQueryOperatorInput, parent: NodeFilterInput): ContentfulEntry
-    contentfulImageWithFocalPoint(children: NodeFilterListInput, contentful_id: StringQueryOperatorInput, id: StringQueryOperatorInput, internal: InternalFilterInput, node_locale: StringQueryOperatorInput, parent: NodeFilterInput): ContentfulImageWithFocalPoint
+    contentfulAsset(children: NodeFilterListInput, contentType: StringQueryOperatorInput, contentfulMetadata: ContentfulMetadataFilterInput, description: StringQueryOperatorInput, filename: StringQueryOperatorInput, filesize: IntQueryOperatorInput, gatsbyImage: GatsbyImageDataQueryOperatorInput, gatsbyImageData: JSONQueryOperatorInput, height: IntQueryOperatorInput, id: StringQueryOperatorInput, internal: InternalFilterInput, linkedFrom: ContentfulLinkedFromFilterInput, mimeType: StringQueryOperatorInput, parent: NodeFilterInput, publicUrl: StringQueryOperatorInput, resize: RemoteFileResizeFilterInput, size: IntQueryOperatorInput, sys: ContentfulSysFilterInput, title: StringQueryOperatorInput, url: StringQueryOperatorInput, width: IntQueryOperatorInput): ContentfulAsset
+    contentfulContentType(children: NodeFilterListInput, description: StringQueryOperatorInput, displayField: StringQueryOperatorInput, id: StringQueryOperatorInput, internal: InternalFilterInput, name: StringQueryOperatorInput, parent: NodeFilterInput): ContentfulContentType
+    contentfulContentTypeBlogPost(body: ContentfulMarkdownFilterInput, childContentfulMarkdown: ContentfulMarkdownFilterInput, children: NodeFilterListInput, childrenContentfulMarkdown: ContentfulMarkdownFilterListInput, contentfulMetadata: ContentfulMetadataFilterInput, description: ContentfulMarkdownFilterInput, heroImage: ContentfulAssetFilterInput, id: StringQueryOperatorInput, internal: InternalFilterInput, lang: StringQueryOperatorInput, linkedFrom: ContentfulLinkedFromFilterInput, media: ContentfulAssetFilterListInput, paragraph: ContentfulRichTextFilterInput, parent: NodeFilterInput, publishDate: DateQueryOperatorInput, rating: IntQueryOperatorInput, slug: StringQueryOperatorInput, sys: ContentfulSysFilterInput, tags: StringQueryOperatorInput, title: StringQueryOperatorInput): ContentfulContentTypeBlogPost
+    contentfulContentTypeImageWithFocalPoint(children: NodeFilterListInput, contentfulMetadata: ContentfulMetadataFilterInput, focalPoint: JSONQueryOperatorInput, id: StringQueryOperatorInput, image: ContentfulAssetFilterInput, internal: InternalFilterInput, linkedFrom: ContentfulLinkedFromFilterInput, parent: NodeFilterInput, sys: ContentfulSysFilterInput, title: StringQueryOperatorInput): ContentfulContentTypeImageWithFocalPoint
+    contentfulEntity(children: NodeFilterListInput, contentfulMetadata: ContentfulMetadataFilterInput, id: StringQueryOperatorInput, internal: InternalFilterInput, parent: NodeFilterInput, sys: ContentfulSysFilterInput): ContentfulEntity
+    contentfulEntry(children: NodeFilterListInput, contentfulMetadata: ContentfulMetadataFilterInput, id: StringQueryOperatorInput, internal: InternalFilterInput, linkedFrom: ContentfulLinkedFromFilterInput, parent: NodeFilterInput, sys: ContentfulSysFilterInput): ContentfulEntry
+    contentfulMarkdown(childMarkdownRemark: MarkdownRemarkFilterInput, children: NodeFilterListInput, childrenMarkdownRemark: MarkdownRemarkFilterListInput, id: StringQueryOperatorInput, internal: InternalFilterInput, parent: NodeFilterInput, raw: StringQueryOperatorInput): ContentfulMarkdown
+    contentfulSys(children: NodeFilterListInput, contentType: ContentfulContentTypeFilterInput, environmentId: StringQueryOperatorInput, firstPublishedAt: DateQueryOperatorInput, id: StringQueryOperatorInput, internal: InternalFilterInput, locale: StringQueryOperatorInput, parent: NodeFilterInput, publishedAt: DateQueryOperatorInput, publishedVersion: IntQueryOperatorInput, spaceId: StringQueryOperatorInput, type: StringQueryOperatorInput): ContentfulSys
+    contentfulTag(children: NodeFilterListInput, contentful_id: StringQueryOperatorInput, id: StringQueryOperatorInput, internal: InternalFilterInput, name: StringQueryOperatorInput, parent: NodeFilterInput): ContentfulTag
     directory(absolutePath: StringQueryOperatorInput, accessTime: DateQueryOperatorInput, atime: DateQueryOperatorInput, atimeMs: FloatQueryOperatorInput, base: StringQueryOperatorInput, birthTime: DateQueryOperatorInput, birthtime: DateQueryOperatorInput, birthtimeMs: FloatQueryOperatorInput, changeTime: DateQueryOperatorInput, children: NodeFilterListInput, ctime: DateQueryOperatorInput, ctimeMs: FloatQueryOperatorInput, dev: IntQueryOperatorInput, dir: StringQueryOperatorInput, ext: StringQueryOperatorInput, extension: StringQueryOperatorInput, gid: IntQueryOperatorInput, id: StringQueryOperatorInput, ino: FloatQueryOperatorInput, internal: InternalFilterInput, mode: IntQueryOperatorInput, modifiedTime: DateQueryOperatorInput, mtime: DateQueryOperatorInput, mtimeMs: FloatQueryOperatorInput, name: StringQueryOperatorInput, nlink: IntQueryOperatorInput, parent: NodeFilterInput, prettySize: StringQueryOperatorInput, rdev: IntQueryOperatorInput, relativeDirectory: StringQueryOperatorInput, relativePath: StringQueryOperatorInput, root: StringQueryOperatorInput, size: IntQueryOperatorInput, sourceInstanceName: StringQueryOperatorInput, uid: IntQueryOperatorInput): Directory
     file(absolutePath: StringQueryOperatorInput, accessTime: DateQueryOperatorInput, atime: DateQueryOperatorInput, atimeMs: FloatQueryOperatorInput, base: StringQueryOperatorInput, birthTime: DateQueryOperatorInput, birthtime: DateQueryOperatorInput, birthtimeMs: FloatQueryOperatorInput, blksize: IntQueryOperatorInput, blocks: IntQueryOperatorInput, changeTime: DateQueryOperatorInput, childImageSharp: ImageSharpFilterInput, children: NodeFilterListInput, childrenImageSharp: ImageSharpFilterListInput, ctime: DateQueryOperatorInput, ctimeMs: FloatQueryOperatorInput, dev: IntQueryOperatorInput, dir: StringQueryOperatorInput, ext: StringQueryOperatorInput, extension: StringQueryOperatorInput, gid: IntQueryOperatorInput, id: StringQueryOperatorInput, ino: FloatQueryOperatorInput, internal: InternalFilterInput, mode: IntQueryOperatorInput, modifiedTime: DateQueryOperatorInput, mtime: DateQueryOperatorInput, mtimeMs: FloatQueryOperatorInput, name: StringQueryOperatorInput, nlink: IntQueryOperatorInput, parent: NodeFilterInput, prettySize: StringQueryOperatorInput, publicURL: StringQueryOperatorInput, rdev: IntQueryOperatorInput, relativeDirectory: StringQueryOperatorInput, relativePath: StringQueryOperatorInput, root: StringQueryOperatorInput, size: IntQueryOperatorInput, sourceInstanceName: StringQueryOperatorInput, uid: IntQueryOperatorInput): File
     imageSharp(children: NodeFilterListInput, fixed: ImageSharpFixedFilterInput, fluid: ImageSharpFluidFilterInput, gatsbyImageData: GatsbyImageDataQueryOperatorInput, id: StringQueryOperatorInput, internal: InternalFilterInput, original: ImageSharpOriginalFilterInput, parent: NodeFilterInput, resize: ImageSharpResizeFilterInput): ImageSharp
@@ -1510,104 +1641,6 @@ type SiteSiteMetadataContacts {
     stackOverFlow: String
 }
 
-type contentfulBlogPostBodyTextNode implements Node {
-    body: String
-    "Returns the first child node of type MarkdownRemark or null if there are no children of given type on this node"
-    childMarkdownRemark: MarkdownRemark
-    children: [Node!]!
-    "Returns all children nodes filtered by type MarkdownRemark"
-    childrenMarkdownRemark: [MarkdownRemark]
-    id: ID!
-    internal: Internal!
-    parent: Node
-    sys: contentfulBlogPostBodyTextNodeSys
-}
-
-type contentfulBlogPostBodyTextNodeConnection {
-    distinct(field: contentfulBlogPostBodyTextNodeFieldSelector!): [String!]!
-    edges: [contentfulBlogPostBodyTextNodeEdge!]!
-    group(field: contentfulBlogPostBodyTextNodeFieldSelector!, limit: Int, skip: Int): [contentfulBlogPostBodyTextNodeGroupConnection!]!
-    max(field: contentfulBlogPostBodyTextNodeFieldSelector!): Float
-    min(field: contentfulBlogPostBodyTextNodeFieldSelector!): Float
-    nodes: [contentfulBlogPostBodyTextNode!]!
-    pageInfo: PageInfo!
-    sum(field: contentfulBlogPostBodyTextNodeFieldSelector!): Float
-    totalCount: Int!
-}
-
-type contentfulBlogPostBodyTextNodeEdge {
-    next: contentfulBlogPostBodyTextNode
-    node: contentfulBlogPostBodyTextNode!
-    previous: contentfulBlogPostBodyTextNode
-}
-
-type contentfulBlogPostBodyTextNodeGroupConnection {
-    distinct(field: contentfulBlogPostBodyTextNodeFieldSelector!): [String!]!
-    edges: [contentfulBlogPostBodyTextNodeEdge!]!
-    field: String!
-    fieldValue: String
-    group(field: contentfulBlogPostBodyTextNodeFieldSelector!, limit: Int, skip: Int): [contentfulBlogPostBodyTextNodeGroupConnection!]!
-    max(field: contentfulBlogPostBodyTextNodeFieldSelector!): Float
-    min(field: contentfulBlogPostBodyTextNodeFieldSelector!): Float
-    nodes: [contentfulBlogPostBodyTextNode!]!
-    pageInfo: PageInfo!
-    sum(field: contentfulBlogPostBodyTextNodeFieldSelector!): Float
-    totalCount: Int!
-}
-
-type contentfulBlogPostBodyTextNodeSys {
-    type: String
-}
-
-type contentfulBlogPostDescriptionTextNode implements Node {
-    "Returns the first child node of type MarkdownRemark or null if there are no children of given type on this node"
-    childMarkdownRemark: MarkdownRemark
-    children: [Node!]!
-    "Returns all children nodes filtered by type MarkdownRemark"
-    childrenMarkdownRemark: [MarkdownRemark]
-    description: String
-    id: ID!
-    internal: Internal!
-    parent: Node
-    sys: contentfulBlogPostDescriptionTextNodeSys
-}
-
-type contentfulBlogPostDescriptionTextNodeConnection {
-    distinct(field: contentfulBlogPostDescriptionTextNodeFieldSelector!): [String!]!
-    edges: [contentfulBlogPostDescriptionTextNodeEdge!]!
-    group(field: contentfulBlogPostDescriptionTextNodeFieldSelector!, limit: Int, skip: Int): [contentfulBlogPostDescriptionTextNodeGroupConnection!]!
-    max(field: contentfulBlogPostDescriptionTextNodeFieldSelector!): Float
-    min(field: contentfulBlogPostDescriptionTextNodeFieldSelector!): Float
-    nodes: [contentfulBlogPostDescriptionTextNode!]!
-    pageInfo: PageInfo!
-    sum(field: contentfulBlogPostDescriptionTextNodeFieldSelector!): Float
-    totalCount: Int!
-}
-
-type contentfulBlogPostDescriptionTextNodeEdge {
-    next: contentfulBlogPostDescriptionTextNode
-    node: contentfulBlogPostDescriptionTextNode!
-    previous: contentfulBlogPostDescriptionTextNode
-}
-
-type contentfulBlogPostDescriptionTextNodeGroupConnection {
-    distinct(field: contentfulBlogPostDescriptionTextNodeFieldSelector!): [String!]!
-    edges: [contentfulBlogPostDescriptionTextNodeEdge!]!
-    field: String!
-    fieldValue: String
-    group(field: contentfulBlogPostDescriptionTextNodeFieldSelector!, limit: Int, skip: Int): [contentfulBlogPostDescriptionTextNodeGroupConnection!]!
-    max(field: contentfulBlogPostDescriptionTextNodeFieldSelector!): Float
-    min(field: contentfulBlogPostDescriptionTextNodeFieldSelector!): Float
-    nodes: [contentfulBlogPostDescriptionTextNode!]!
-    pageInfo: PageInfo!
-    sum(field: contentfulBlogPostDescriptionTextNodeFieldSelector!): Float
-    totalCount: Int!
-}
-
-type contentfulBlogPostDescriptionTextNodeSys {
-    type: String
-}
-
 enum ContentfulImageCropFocus {
     BOTTOM
     BOTTOM_LEFT
@@ -1804,10 +1837,9 @@ input BooleanQueryOperatorInput {
 
 input ContentfulAssetFieldSelector {
     children: NodeFieldSelector
-    contentful_id: FieldSelectorEnum
-    createdAt: FieldSelectorEnum
+    contentType: FieldSelectorEnum
+    contentfulMetadata: ContentfulMetadataFieldSelector
     description: FieldSelectorEnum
-    file: ContentfulAssetFileFieldSelector
     filename: FieldSelectorEnum
     filesize: FieldSelectorEnum
     gatsbyImage: FieldSelectorEnum
@@ -1815,106 +1847,51 @@ input ContentfulAssetFieldSelector {
     height: FieldSelectorEnum
     id: FieldSelectorEnum
     internal: InternalFieldSelector
+    linkedFrom: ContentfulLinkedFromFieldSelector
     mimeType: FieldSelectorEnum
-    node_locale: FieldSelectorEnum
     parent: NodeFieldSelector
-    placeholderUrl: FieldSelectorEnum
     publicUrl: FieldSelectorEnum
     resize: RemoteFileResizeFieldSelector
     size: FieldSelectorEnum
-    spaceId: FieldSelectorEnum
-    sys: ContentfulAssetSysFieldSelector
+    sys: ContentfulSysFieldSelector
     title: FieldSelectorEnum
-    updatedAt: FieldSelectorEnum
     url: FieldSelectorEnum
     width: FieldSelectorEnum
-}
-
-input ContentfulAssetFileDetailsFieldSelector {
-    image: ContentfulAssetFileDetailsImageFieldSelector
-    size: FieldSelectorEnum
-}
-
-input ContentfulAssetFileDetailsFilterInput {
-    image: ContentfulAssetFileDetailsImageFilterInput
-    size: IntQueryOperatorInput
-}
-
-input ContentfulAssetFileDetailsImageFieldSelector {
-    height: FieldSelectorEnum
-    width: FieldSelectorEnum
-}
-
-input ContentfulAssetFileDetailsImageFilterInput {
-    height: IntQueryOperatorInput
-    width: IntQueryOperatorInput
-}
-
-input ContentfulAssetFileDetailsImageSortInput {
-    height: SortOrderEnum
-    width: SortOrderEnum
-}
-
-input ContentfulAssetFileDetailsSortInput {
-    image: ContentfulAssetFileDetailsImageSortInput
-    size: SortOrderEnum
-}
-
-input ContentfulAssetFileFieldSelector {
-    contentType: FieldSelectorEnum
-    details: ContentfulAssetFileDetailsFieldSelector
-    fileName: FieldSelectorEnum
-    url: FieldSelectorEnum
-}
-
-input ContentfulAssetFileFilterInput {
-    contentType: StringQueryOperatorInput
-    details: ContentfulAssetFileDetailsFilterInput
-    fileName: StringQueryOperatorInput
-    url: StringQueryOperatorInput
-}
-
-input ContentfulAssetFileSortInput {
-    contentType: SortOrderEnum
-    details: ContentfulAssetFileDetailsSortInput
-    fileName: SortOrderEnum
-    url: SortOrderEnum
 }
 
 input ContentfulAssetFilterInput {
     children: NodeFilterListInput
-    contentful_id: StringQueryOperatorInput
-    createdAt: DateQueryOperatorInput
+    contentType: StringQueryOperatorInput
+    contentfulMetadata: ContentfulMetadataFilterInput
     description: StringQueryOperatorInput
-    file: ContentfulAssetFileFilterInput
     filename: StringQueryOperatorInput
     filesize: IntQueryOperatorInput
     gatsbyImage: GatsbyImageDataQueryOperatorInput
-    gatsbyImageData: GatsbyImageDataQueryOperatorInput
+    gatsbyImageData: JSONQueryOperatorInput
     height: IntQueryOperatorInput
     id: StringQueryOperatorInput
     internal: InternalFilterInput
+    linkedFrom: ContentfulLinkedFromFilterInput
     mimeType: StringQueryOperatorInput
-    node_locale: StringQueryOperatorInput
     parent: NodeFilterInput
-    placeholderUrl: StringQueryOperatorInput
     publicUrl: StringQueryOperatorInput
     resize: RemoteFileResizeFilterInput
     size: IntQueryOperatorInput
-    spaceId: StringQueryOperatorInput
-    sys: ContentfulAssetSysFilterInput
+    sys: ContentfulSysFilterInput
     title: StringQueryOperatorInput
-    updatedAt: DateQueryOperatorInput
     url: StringQueryOperatorInput
     width: IntQueryOperatorInput
 }
 
+input ContentfulAssetFilterListInput {
+    elemMatch: ContentfulAssetFilterInput
+}
+
 input ContentfulAssetSortInput {
     children: NodeSortInput
-    contentful_id: SortOrderEnum
-    createdAt: SortOrderEnum
+    contentType: SortOrderEnum
+    contentfulMetadata: ContentfulMetadataSortInput
     description: SortOrderEnum
-    file: ContentfulAssetFileSortInput
     filename: SortOrderEnum
     filesize: SortOrderEnum
     gatsbyImage: SortOrderEnum
@@ -1922,255 +1899,422 @@ input ContentfulAssetSortInput {
     height: SortOrderEnum
     id: SortOrderEnum
     internal: InternalSortInput
+    linkedFrom: ContentfulLinkedFromSortInput
     mimeType: SortOrderEnum
-    node_locale: SortOrderEnum
     parent: NodeSortInput
-    placeholderUrl: SortOrderEnum
     publicUrl: SortOrderEnum
     resize: RemoteFileResizeSortInput
     size: SortOrderEnum
-    spaceId: SortOrderEnum
-    sys: ContentfulAssetSysSortInput
+    sys: ContentfulSysSortInput
     title: SortOrderEnum
-    updatedAt: SortOrderEnum
     url: SortOrderEnum
     width: SortOrderEnum
 }
 
-input ContentfulAssetSysFieldSelector {
-    revision: FieldSelectorEnum
-    type: FieldSelectorEnum
-}
-
-input ContentfulAssetSysFilterInput {
-    revision: IntQueryOperatorInput
-    type: StringQueryOperatorInput
-}
-
-input ContentfulAssetSysSortInput {
-    revision: SortOrderEnum
-    type: SortOrderEnum
-}
-
-input ContentfulBlogPostFieldSelector {
-    body: contentfulBlogPostBodyTextNodeFieldSelector
-    childContentfulBlogPostBodyTextNode: contentfulBlogPostBodyTextNodeFieldSelector
-    childContentfulBlogPostDescriptionTextNode: contentfulBlogPostDescriptionTextNodeFieldSelector
+input ContentfulContentTypeBlogPostFieldSelector {
+    body: ContentfulMarkdownFieldSelector
+    childContentfulMarkdown: ContentfulMarkdownFieldSelector
     children: NodeFieldSelector
-    childrenContentfulBlogPostBodyTextNode: contentfulBlogPostBodyTextNodeFieldSelector
-    childrenContentfulBlogPostDescriptionTextNode: contentfulBlogPostDescriptionTextNodeFieldSelector
-    contentful_id: FieldSelectorEnum
-    createdAt: FieldSelectorEnum
-    description: contentfulBlogPostDescriptionTextNodeFieldSelector
+    childrenContentfulMarkdown: ContentfulMarkdownFieldSelector
+    contentfulMetadata: ContentfulMetadataFieldSelector
+    description: ContentfulMarkdownFieldSelector
     heroImage: ContentfulAssetFieldSelector
     id: FieldSelectorEnum
     internal: InternalFieldSelector
     lang: FieldSelectorEnum
-    node_locale: FieldSelectorEnum
+    linkedFrom: ContentfulLinkedFromFieldSelector
+    media: ContentfulAssetFieldSelector
+    paragraph: ContentfulRichTextFieldSelector
     parent: NodeFieldSelector
     publishDate: FieldSelectorEnum
     rating: FieldSelectorEnum
     slug: FieldSelectorEnum
-    spaceId: FieldSelectorEnum
-    sys: ContentfulBlogPostSysFieldSelector
+    sys: ContentfulSysFieldSelector
     tags: FieldSelectorEnum
     title: FieldSelectorEnum
-    updatedAt: FieldSelectorEnum
 }
 
-input ContentfulBlogPostFilterInput {
-    body: contentfulBlogPostBodyTextNodeFilterInput
-    childContentfulBlogPostBodyTextNode: contentfulBlogPostBodyTextNodeFilterInput
-    childContentfulBlogPostDescriptionTextNode: contentfulBlogPostDescriptionTextNodeFilterInput
+input ContentfulContentTypeBlogPostFilterInput {
+    body: ContentfulMarkdownFilterInput
+    childContentfulMarkdown: ContentfulMarkdownFilterInput
     children: NodeFilterListInput
-    childrenContentfulBlogPostBodyTextNode: contentfulBlogPostBodyTextNodeFilterListInput
-    childrenContentfulBlogPostDescriptionTextNode: contentfulBlogPostDescriptionTextNodeFilterListInput
-    contentful_id: StringQueryOperatorInput
-    createdAt: DateQueryOperatorInput
-    description: contentfulBlogPostDescriptionTextNodeFilterInput
+    childrenContentfulMarkdown: ContentfulMarkdownFilterListInput
+    contentfulMetadata: ContentfulMetadataFilterInput
+    description: ContentfulMarkdownFilterInput
     heroImage: ContentfulAssetFilterInput
     id: StringQueryOperatorInput
     internal: InternalFilterInput
     lang: StringQueryOperatorInput
-    node_locale: StringQueryOperatorInput
+    linkedFrom: ContentfulLinkedFromFilterInput
+    media: ContentfulAssetFilterListInput
+    paragraph: ContentfulRichTextFilterInput
     parent: NodeFilterInput
     publishDate: DateQueryOperatorInput
     rating: IntQueryOperatorInput
     slug: StringQueryOperatorInput
-    spaceId: StringQueryOperatorInput
-    sys: ContentfulBlogPostSysFilterInput
+    sys: ContentfulSysFilterInput
     tags: StringQueryOperatorInput
     title: StringQueryOperatorInput
-    updatedAt: DateQueryOperatorInput
 }
 
-input ContentfulBlogPostSortInput {
-    body: contentfulBlogPostBodyTextNodeSortInput
-    childContentfulBlogPostBodyTextNode: contentfulBlogPostBodyTextNodeSortInput
-    childContentfulBlogPostDescriptionTextNode: contentfulBlogPostDescriptionTextNodeSortInput
+input ContentfulContentTypeBlogPostFilterListInput {
+    elemMatch: ContentfulContentTypeBlogPostFilterInput
+}
+
+input ContentfulContentTypeBlogPostSortInput {
+    body: ContentfulMarkdownSortInput
+    childContentfulMarkdown: ContentfulMarkdownSortInput
     children: NodeSortInput
-    childrenContentfulBlogPostBodyTextNode: contentfulBlogPostBodyTextNodeSortInput
-    childrenContentfulBlogPostDescriptionTextNode: contentfulBlogPostDescriptionTextNodeSortInput
-    contentful_id: SortOrderEnum
-    createdAt: SortOrderEnum
-    description: contentfulBlogPostDescriptionTextNodeSortInput
+    childrenContentfulMarkdown: ContentfulMarkdownSortInput
+    contentfulMetadata: ContentfulMetadataSortInput
+    description: ContentfulMarkdownSortInput
     heroImage: ContentfulAssetSortInput
     id: SortOrderEnum
     internal: InternalSortInput
     lang: SortOrderEnum
-    node_locale: SortOrderEnum
+    linkedFrom: ContentfulLinkedFromSortInput
+    media: ContentfulAssetSortInput
+    paragraph: ContentfulRichTextSortInput
     parent: NodeSortInput
     publishDate: SortOrderEnum
     rating: SortOrderEnum
     slug: SortOrderEnum
-    spaceId: SortOrderEnum
-    sys: ContentfulBlogPostSysSortInput
+    sys: ContentfulSysSortInput
     tags: SortOrderEnum
     title: SortOrderEnum
-    updatedAt: SortOrderEnum
-}
-
-input ContentfulBlogPostSysContentTypeFieldSelector {
-    sys: ContentfulBlogPostSysContentTypeSysFieldSelector
-}
-
-input ContentfulBlogPostSysContentTypeFilterInput {
-    sys: ContentfulBlogPostSysContentTypeSysFilterInput
-}
-
-input ContentfulBlogPostSysContentTypeSortInput {
-    sys: ContentfulBlogPostSysContentTypeSysSortInput
-}
-
-input ContentfulBlogPostSysContentTypeSysFieldSelector {
-    id: FieldSelectorEnum
-    linkType: FieldSelectorEnum
-    type: FieldSelectorEnum
-}
-
-input ContentfulBlogPostSysContentTypeSysFilterInput {
-    id: StringQueryOperatorInput
-    linkType: StringQueryOperatorInput
-    type: StringQueryOperatorInput
-}
-
-input ContentfulBlogPostSysContentTypeSysSortInput {
-    id: SortOrderEnum
-    linkType: SortOrderEnum
-    type: SortOrderEnum
-}
-
-input ContentfulBlogPostSysFieldSelector {
-    contentType: ContentfulBlogPostSysContentTypeFieldSelector
-    revision: FieldSelectorEnum
-    type: FieldSelectorEnum
-}
-
-input ContentfulBlogPostSysFilterInput {
-    contentType: ContentfulBlogPostSysContentTypeFilterInput
-    revision: IntQueryOperatorInput
-    type: StringQueryOperatorInput
-}
-
-input ContentfulBlogPostSysSortInput {
-    contentType: ContentfulBlogPostSysContentTypeSortInput
-    revision: SortOrderEnum
-    type: SortOrderEnum
 }
 
 input ContentfulContentTypeFieldSelector {
     children: NodeFieldSelector
+    description: FieldSelectorEnum
     displayField: FieldSelectorEnum
     id: FieldSelectorEnum
     internal: InternalFieldSelector
     name: FieldSelectorEnum
     parent: NodeFieldSelector
-    sys: ContentfulContentTypeSysFieldSelector
 }
 
 input ContentfulContentTypeFilterInput {
     children: NodeFilterListInput
+    description: StringQueryOperatorInput
     displayField: StringQueryOperatorInput
     id: StringQueryOperatorInput
     internal: InternalFilterInput
     name: StringQueryOperatorInput
     parent: NodeFilterInput
-    sys: ContentfulContentTypeSysFilterInput
+}
+
+input ContentfulContentTypeImageWithFocalPointFieldSelector {
+    children: NodeFieldSelector
+    contentfulMetadata: ContentfulMetadataFieldSelector
+    focalPoint: FieldSelectorEnum
+    id: FieldSelectorEnum
+    image: ContentfulAssetFieldSelector
+    internal: InternalFieldSelector
+    linkedFrom: ContentfulLinkedFromFieldSelector
+    parent: NodeFieldSelector
+    sys: ContentfulSysFieldSelector
+    title: FieldSelectorEnum
+}
+
+input ContentfulContentTypeImageWithFocalPointFilterInput {
+    children: NodeFilterListInput
+    contentfulMetadata: ContentfulMetadataFilterInput
+    focalPoint: JSONQueryOperatorInput
+    id: StringQueryOperatorInput
+    image: ContentfulAssetFilterInput
+    internal: InternalFilterInput
+    linkedFrom: ContentfulLinkedFromFilterInput
+    parent: NodeFilterInput
+    sys: ContentfulSysFilterInput
+    title: StringQueryOperatorInput
+}
+
+input ContentfulContentTypeImageWithFocalPointFilterListInput {
+    elemMatch: ContentfulContentTypeImageWithFocalPointFilterInput
+}
+
+input ContentfulContentTypeImageWithFocalPointSortInput {
+    children: NodeSortInput
+    contentfulMetadata: ContentfulMetadataSortInput
+    focalPoint: SortOrderEnum
+    id: SortOrderEnum
+    image: ContentfulAssetSortInput
+    internal: InternalSortInput
+    linkedFrom: ContentfulLinkedFromSortInput
+    parent: NodeSortInput
+    sys: ContentfulSysSortInput
+    title: SortOrderEnum
 }
 
 input ContentfulContentTypeSortInput {
     children: NodeSortInput
+    description: SortOrderEnum
     displayField: SortOrderEnum
     id: SortOrderEnum
     internal: InternalSortInput
     name: SortOrderEnum
     parent: NodeSortInput
-    sys: ContentfulContentTypeSysSortInput
 }
 
-input ContentfulContentTypeSysFieldSelector {
-    type: FieldSelectorEnum
+input ContentfulEntityFieldSelector {
+    children: NodeFieldSelector
+    contentfulMetadata: ContentfulMetadataFieldSelector
+    id: FieldSelectorEnum
+    internal: InternalFieldSelector
+    parent: NodeFieldSelector
+    sys: ContentfulSysFieldSelector
 }
 
-input ContentfulContentTypeSysFilterInput {
-    type: StringQueryOperatorInput
+input ContentfulEntityFilterInput {
+    children: NodeFilterListInput
+    contentfulMetadata: ContentfulMetadataFilterInput
+    id: StringQueryOperatorInput
+    internal: InternalFilterInput
+    parent: NodeFilterInput
+    sys: ContentfulSysFilterInput
 }
 
-input ContentfulContentTypeSysSortInput {
-    type: SortOrderEnum
+input ContentfulEntitySortInput {
+    children: NodeSortInput
+    contentfulMetadata: ContentfulMetadataSortInput
+    id: SortOrderEnum
+    internal: InternalSortInput
+    parent: NodeSortInput
+    sys: ContentfulSysSortInput
 }
 
 input ContentfulEntryFieldSelector {
     children: NodeFieldSelector
-    contentful_id: FieldSelectorEnum
+    contentfulMetadata: ContentfulMetadataFieldSelector
     id: FieldSelectorEnum
     internal: InternalFieldSelector
-    node_locale: FieldSelectorEnum
+    linkedFrom: ContentfulLinkedFromFieldSelector
     parent: NodeFieldSelector
+    sys: ContentfulSysFieldSelector
 }
 
 input ContentfulEntryFilterInput {
     children: NodeFilterListInput
-    contentful_id: StringQueryOperatorInput
+    contentfulMetadata: ContentfulMetadataFilterInput
     id: StringQueryOperatorInput
     internal: InternalFilterInput
-    node_locale: StringQueryOperatorInput
+    linkedFrom: ContentfulLinkedFromFilterInput
     parent: NodeFilterInput
+    sys: ContentfulSysFilterInput
+}
+
+input ContentfulEntryFilterListInput {
+    elemMatch: ContentfulEntryFilterInput
 }
 
 input ContentfulEntrySortInput {
     children: NodeSortInput
-    contentful_id: SortOrderEnum
+    contentfulMetadata: ContentfulMetadataSortInput
     id: SortOrderEnum
     internal: InternalSortInput
-    node_locale: SortOrderEnum
+    linkedFrom: ContentfulLinkedFromSortInput
     parent: NodeSortInput
+    sys: ContentfulSysSortInput
 }
 
-input ContentfulImageWithFocalPointFieldSelector {
+input ContentfulLinkedFromFieldSelector {
+    ContentfulContentTypeBlogPost: ContentfulContentTypeBlogPostFieldSelector
+    ContentfulContentTypeImageWithFocalPoint: ContentfulContentTypeImageWithFocalPointFieldSelector
+}
+
+input ContentfulLinkedFromFilterInput {
+    ContentfulContentTypeBlogPost: ContentfulContentTypeBlogPostFilterListInput
+    ContentfulContentTypeImageWithFocalPoint: ContentfulContentTypeImageWithFocalPointFilterListInput
+}
+
+input ContentfulLinkedFromSortInput {
+    ContentfulContentTypeBlogPost: ContentfulContentTypeBlogPostSortInput
+    ContentfulContentTypeImageWithFocalPoint: ContentfulContentTypeImageWithFocalPointSortInput
+}
+
+input ContentfulMarkdownFieldSelector {
+    childMarkdownRemark: MarkdownRemarkFieldSelector
+    children: NodeFieldSelector
+    childrenMarkdownRemark: MarkdownRemarkFieldSelector
+    id: FieldSelectorEnum
+    internal: InternalFieldSelector
+    parent: NodeFieldSelector
+    raw: FieldSelectorEnum
+}
+
+input ContentfulMarkdownFilterInput {
+    childMarkdownRemark: MarkdownRemarkFilterInput
+    children: NodeFilterListInput
+    childrenMarkdownRemark: MarkdownRemarkFilterListInput
+    id: StringQueryOperatorInput
+    internal: InternalFilterInput
+    parent: NodeFilterInput
+    raw: StringQueryOperatorInput
+}
+
+input ContentfulMarkdownFilterListInput {
+    elemMatch: ContentfulMarkdownFilterInput
+}
+
+input ContentfulMarkdownSortInput {
+    childMarkdownRemark: MarkdownRemarkSortInput
+    children: NodeSortInput
+    childrenMarkdownRemark: MarkdownRemarkSortInput
+    id: SortOrderEnum
+    internal: InternalSortInput
+    parent: NodeSortInput
+    raw: SortOrderEnum
+}
+
+input ContentfulMetadataFieldSelector {
+    tags: ContentfulTagFieldSelector
+}
+
+input ContentfulMetadataFilterInput {
+    tags: ContentfulTagFilterListInput
+}
+
+input ContentfulMetadataSortInput {
+    tags: ContentfulTagSortInput
+}
+
+input ContentfulRichTextAssetsFieldSelector {
+    block: ContentfulAssetFieldSelector
+    hyperlink: ContentfulAssetFieldSelector
+}
+
+input ContentfulRichTextAssetsFilterInput {
+    block: ContentfulAssetFilterListInput
+    hyperlink: ContentfulAssetFilterListInput
+}
+
+input ContentfulRichTextAssetsSortInput {
+    block: ContentfulAssetSortInput
+    hyperlink: ContentfulAssetSortInput
+}
+
+input ContentfulRichTextEntriesFieldSelector {
+    block: ContentfulEntryFieldSelector
+    hyperlink: ContentfulEntryFieldSelector
+    inline: ContentfulEntryFieldSelector
+}
+
+input ContentfulRichTextEntriesFilterInput {
+    block: ContentfulEntryFilterListInput
+    hyperlink: ContentfulEntryFilterListInput
+    inline: ContentfulEntryFilterListInput
+}
+
+input ContentfulRichTextEntriesSortInput {
+    block: ContentfulEntrySortInput
+    hyperlink: ContentfulEntrySortInput
+    inline: ContentfulEntrySortInput
+}
+
+input ContentfulRichTextFieldSelector {
+    json: FieldSelectorEnum
+    links: ContentfulRichTextLinksFieldSelector
+}
+
+input ContentfulRichTextFilterInput {
+    json: JSONQueryOperatorInput
+    links: ContentfulRichTextLinksFilterInput
+}
+
+input ContentfulRichTextLinksFieldSelector {
+    assets: ContentfulRichTextAssetsFieldSelector
+    entries: ContentfulRichTextEntriesFieldSelector
+}
+
+input ContentfulRichTextLinksFilterInput {
+    assets: ContentfulRichTextAssetsFilterInput
+    entries: ContentfulRichTextEntriesFilterInput
+}
+
+input ContentfulRichTextLinksSortInput {
+    assets: ContentfulRichTextAssetsSortInput
+    entries: ContentfulRichTextEntriesSortInput
+}
+
+input ContentfulRichTextSortInput {
+    json: SortOrderEnum
+    links: ContentfulRichTextLinksSortInput
+}
+
+input ContentfulSysFieldSelector {
+    children: NodeFieldSelector
+    contentType: ContentfulContentTypeFieldSelector
+    environmentId: FieldSelectorEnum
+    firstPublishedAt: FieldSelectorEnum
+    id: FieldSelectorEnum
+    internal: InternalFieldSelector
+    locale: FieldSelectorEnum
+    parent: NodeFieldSelector
+    publishedAt: FieldSelectorEnum
+    publishedVersion: FieldSelectorEnum
+    spaceId: FieldSelectorEnum
+    type: FieldSelectorEnum
+}
+
+input ContentfulSysFilterInput {
+    children: NodeFilterListInput
+    contentType: ContentfulContentTypeFilterInput
+    environmentId: StringQueryOperatorInput
+    firstPublishedAt: DateQueryOperatorInput
+    id: StringQueryOperatorInput
+    internal: InternalFilterInput
+    locale: StringQueryOperatorInput
+    parent: NodeFilterInput
+    publishedAt: DateQueryOperatorInput
+    publishedVersion: IntQueryOperatorInput
+    spaceId: StringQueryOperatorInput
+    type: StringQueryOperatorInput
+}
+
+input ContentfulSysSortInput {
+    children: NodeSortInput
+    contentType: ContentfulContentTypeSortInput
+    environmentId: SortOrderEnum
+    firstPublishedAt: SortOrderEnum
+    id: SortOrderEnum
+    internal: InternalSortInput
+    locale: SortOrderEnum
+    parent: NodeSortInput
+    publishedAt: SortOrderEnum
+    publishedVersion: SortOrderEnum
+    spaceId: SortOrderEnum
+    type: SortOrderEnum
+}
+
+input ContentfulTagFieldSelector {
     children: NodeFieldSelector
     contentful_id: FieldSelectorEnum
     id: FieldSelectorEnum
     internal: InternalFieldSelector
-    node_locale: FieldSelectorEnum
+    name: FieldSelectorEnum
     parent: NodeFieldSelector
 }
 
-input ContentfulImageWithFocalPointFilterInput {
+input ContentfulTagFilterInput {
     children: NodeFilterListInput
     contentful_id: StringQueryOperatorInput
     id: StringQueryOperatorInput
     internal: InternalFilterInput
-    node_locale: StringQueryOperatorInput
+    name: StringQueryOperatorInput
     parent: NodeFilterInput
 }
 
-input ContentfulImageWithFocalPointSortInput {
+input ContentfulTagFilterListInput {
+    elemMatch: ContentfulTagFilterInput
+}
+
+input ContentfulTagSortInput {
     children: NodeSortInput
     contentful_id: SortOrderEnum
     id: SortOrderEnum
     internal: InternalSortInput
-    node_locale: SortOrderEnum
+    name: SortOrderEnum
     parent: NodeSortInput
 }
 
@@ -3136,102 +3280,4 @@ input TransformOptions {
 
 input WebPOptions {
     quality: Int
-}
-
-input contentfulBlogPostBodyTextNodeFieldSelector {
-    body: FieldSelectorEnum
-    childMarkdownRemark: MarkdownRemarkFieldSelector
-    children: NodeFieldSelector
-    childrenMarkdownRemark: MarkdownRemarkFieldSelector
-    id: FieldSelectorEnum
-    internal: InternalFieldSelector
-    parent: NodeFieldSelector
-    sys: contentfulBlogPostBodyTextNodeSysFieldSelector
-}
-
-input contentfulBlogPostBodyTextNodeFilterInput {
-    body: StringQueryOperatorInput
-    childMarkdownRemark: MarkdownRemarkFilterInput
-    children: NodeFilterListInput
-    childrenMarkdownRemark: MarkdownRemarkFilterListInput
-    id: StringQueryOperatorInput
-    internal: InternalFilterInput
-    parent: NodeFilterInput
-    sys: contentfulBlogPostBodyTextNodeSysFilterInput
-}
-
-input contentfulBlogPostBodyTextNodeFilterListInput {
-    elemMatch: contentfulBlogPostBodyTextNodeFilterInput
-}
-
-input contentfulBlogPostBodyTextNodeSortInput {
-    body: SortOrderEnum
-    childMarkdownRemark: MarkdownRemarkSortInput
-    children: NodeSortInput
-    childrenMarkdownRemark: MarkdownRemarkSortInput
-    id: SortOrderEnum
-    internal: InternalSortInput
-    parent: NodeSortInput
-    sys: contentfulBlogPostBodyTextNodeSysSortInput
-}
-
-input contentfulBlogPostBodyTextNodeSysFieldSelector {
-    type: FieldSelectorEnum
-}
-
-input contentfulBlogPostBodyTextNodeSysFilterInput {
-    type: StringQueryOperatorInput
-}
-
-input contentfulBlogPostBodyTextNodeSysSortInput {
-    type: SortOrderEnum
-}
-
-input contentfulBlogPostDescriptionTextNodeFieldSelector {
-    childMarkdownRemark: MarkdownRemarkFieldSelector
-    children: NodeFieldSelector
-    childrenMarkdownRemark: MarkdownRemarkFieldSelector
-    description: FieldSelectorEnum
-    id: FieldSelectorEnum
-    internal: InternalFieldSelector
-    parent: NodeFieldSelector
-    sys: contentfulBlogPostDescriptionTextNodeSysFieldSelector
-}
-
-input contentfulBlogPostDescriptionTextNodeFilterInput {
-    childMarkdownRemark: MarkdownRemarkFilterInput
-    children: NodeFilterListInput
-    childrenMarkdownRemark: MarkdownRemarkFilterListInput
-    description: StringQueryOperatorInput
-    id: StringQueryOperatorInput
-    internal: InternalFilterInput
-    parent: NodeFilterInput
-    sys: contentfulBlogPostDescriptionTextNodeSysFilterInput
-}
-
-input contentfulBlogPostDescriptionTextNodeFilterListInput {
-    elemMatch: contentfulBlogPostDescriptionTextNodeFilterInput
-}
-
-input contentfulBlogPostDescriptionTextNodeSortInput {
-    childMarkdownRemark: MarkdownRemarkSortInput
-    children: NodeSortInput
-    childrenMarkdownRemark: MarkdownRemarkSortInput
-    description: SortOrderEnum
-    id: SortOrderEnum
-    internal: InternalSortInput
-    parent: NodeSortInput
-    sys: contentfulBlogPostDescriptionTextNodeSysSortInput
-}
-
-input contentfulBlogPostDescriptionTextNodeSysFieldSelector {
-    type: FieldSelectorEnum
-}
-
-input contentfulBlogPostDescriptionTextNodeSysFilterInput {
-    type: StringQueryOperatorInput
-}
-
-input contentfulBlogPostDescriptionTextNodeSysSortInput {
-    type: SortOrderEnum
 }

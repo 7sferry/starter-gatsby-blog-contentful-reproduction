@@ -21,7 +21,7 @@ export interface StockCacheInputProps {
 }
 
 export interface AllContentfulBlogPost {
-  readonly allContentfulBlogPost: {
+  readonly allContentfulContentTypeBlogPost: {
     readonly nodes: Array<{
       readonly tags: Array<string>;
       readonly slug: string;
@@ -72,7 +72,7 @@ export interface SeoAttr {
 
 export interface BlogPostProp {
   readonly data: {
-    readonly contentfulBlogPost: {
+    readonly contentfulContentTypeBlogPost: {
       readonly title: string;
       readonly publishDate: string;
       readonly updatedAt: string;
@@ -125,7 +125,7 @@ export interface CommentAttr {
 }
 
 export interface TagsData {
-  readonly allContentfulBlogPost: {
+  readonly allContentfulContentTypeBlogPost: {
     readonly tags: Array<string>;
   };
 }
@@ -148,7 +148,7 @@ export interface AnalyticsData {
       readonly path: string;
     }>;
   };
-  readonly allContentfulBlogPost: {
+  readonly allContentfulContentTypeBlogPost: {
     readonly nodes: Array<{
       readonly slug: string;
       readonly title: string;
@@ -157,7 +157,7 @@ export interface AnalyticsData {
 }
 
 export interface IndexData {
-  readonly allContentfulBlogPost: {
+  readonly allContentfulContentTypeBlogPost: {
     readonly nodes: Array<{
       readonly slug: string;
       readonly body: {
@@ -206,7 +206,7 @@ export interface MenuAttr {
 }
 
 export interface FeaturedPageData {
-  readonly allContentfulBlogPost: {
+  readonly allContentfulContentTypeBlogPost: {
     readonly nodes: Array<{
       readonly slug: string;
       readonly title: string;
@@ -237,7 +237,7 @@ export interface ArchiveProp {
 }
 
 export interface ArchiveAttr {
-  readonly allContentfulBlogPost: {
+  readonly allContentfulContentTypeBlogPost: {
     readonly nodes: Array<ArchiveNode>;
   };
 }
@@ -255,7 +255,7 @@ export interface DateObject {
 
 export interface AlgoliaData {
   readonly data: {
-    readonly allContentfulBlogPost: {
+    readonly allContentfulContentTypeBlogPost: {
       readonly nodes: Array<AlgoliaNode>;
     };
   };
