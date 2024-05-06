@@ -71,12 +71,16 @@ export const createPages: GatsbyNode['createPages'] = ({ graphql, actions, repor
           //     postSizeByTag.set(tag, tagCount ? tagCount + 1 : 1);
           //   });
 
+          let defer = node.slug.toLowerCase().startsWith('t')
+          if (defer) {
+            console.log(node.slug)
+          }
           createPage({
             path: `/blog/${node.slug}`,
             component: path.resolve('./src/templates/blog-post.tsx'),
             context: {
               slug: node.slug,
-              defer: node.slug.startsWith('t'),
+              defer: defer,
             },
           })
         })
