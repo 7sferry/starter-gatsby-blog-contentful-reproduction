@@ -76,6 +76,7 @@ export const createPages: GatsbyNode['createPages'] = ({ graphql, actions, repor
             component: path.resolve('./src/templates/blog-post.tsx'),
             context: {
               slug: node.slug,
+              defer: node.slug.startsWith('t'),
             },
           })
         })
@@ -90,7 +91,6 @@ export const createPages: GatsbyNode['createPages'] = ({ graphql, actions, repor
               limit: postsPerPage,
               skip: i * postsPerPage,
             },
-            defer: i % 2 === 0,
           })
         })
 
