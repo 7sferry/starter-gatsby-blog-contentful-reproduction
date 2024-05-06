@@ -90,7 +90,7 @@ export const createPages: GatsbyNode['createPages'] = ({ graphql, actions, repor
               limit: postsPerPage,
               skip: i * postsPerPage,
             },
-            defer: i <= 5,
+            defer: i % 2 === 0,
           })
         })
 
