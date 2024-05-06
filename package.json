@@ -50,7 +50,7 @@
   "homepage": "https://ferry.vercel.app",
   "scripts": {
     "build": "gatsby build",
-    "develop": "tsc --noEmit && gatsby develop -H 0.0.0.0",
+    "develop": "gatsby develop -H 0.0.0.0",
     "clean-develop": "gatsby clean && tsc --noEmit && gatsby develop -H 0.0.0.0",
     "clean-build": "gatsby clean && gatsby build",
     "format": "prettier --write src/**/*.{js,jsx,ts,tsx}",
