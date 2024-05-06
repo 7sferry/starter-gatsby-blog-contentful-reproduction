@@ -33,6 +33,8 @@ bower_components
 build/Release
 
 # Dependency directories
+.idea/
+.vscode/
 node_modules/
 jspm_packages/
 
@@ -51,24 +53,24 @@ typings/
 # Output of 'npm pack'
 *.tgz
 
-# Yarn integrity file
-.yarn-integrity
-
 # dotenv environment variables file
-.env*
+.env
+.env.build
 
-# Gatsby build folder
+# gatsby files
+.cache/
 public
 
-# Gatsby cache folder
-.cache
-
-# Contentful config file
-.contentful.json
-
-# Local Netlify folder
-.netlify
-
-# System files
+# Mac files
 .DS_Store
-Thumbs.db
+
+# Yarn
+yarn-error.log
+.pnp/
+.pnp.js
+# Yarn Integrity file
+.yarn-integrity
+
+.now
+*.iml
+test.js

@@ -1,3 +1,20 @@
 language: node_js
-node_js: "12"
-after_success: npm run build
+
+node_js:
+  - "stable"
+  - "lts/*"
+
+branches:
+  only:
+    - dev
+
+cache:
+  directories:
+    - node_modules
+
+before_script:
+  - "npm i -g gatsby-cli"
+  - "yarn"
+
+script:
+  - gatsby build

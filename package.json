@@ -1,57 +1,86 @@
 {
-  "name": "contentful-starter-gatsby-blog",
-  "description": "Contentful Gatsby Starter Blog",
-  "private": true,
-  "version": "0.0.1",
-  "author": "Contentful <opensource@contentful.com>",
-  "bugs": {
-    "url": "https://github.com/contentful/starter-gatsby-blog/issues"
-  },
+  "name": "gatsbyan",
+  "description": "My personal blog powered by Gatsby JS",
+  "version": "2.2.0",
+  "author": "Ferry",
   "dependencies": {
-    "@contentful/rich-text-plain-text-renderer": "^15.12.1",
+    "bootstrap": "^5.3.2",
+    "date-fns": "^3.3.1",
     "gatsby": "^5.13.3",
+    "gatsby-plugin-catch-links": "^5.13.1",
     "gatsby-plugin-image": "^3.13.1",
-    "gatsby-plugin-react-helmet": "^6.5.0",
+    "gatsby-plugin-manifest": "^5.13.1",
+    "gatsby-plugin-offline": "^6.13.1",
+    "gatsby-plugin-purgecss": "^6.2.1",
     "gatsby-plugin-sharp": "^5.13.1",
+    "gatsby-plugin-sitemap": "^6.13.1",
+    "gatsby-remark-images-contentful": "^6.13.1",
+    "gatsby-remark-prismjs": "^7.13.1",
     "gatsby-source-contentful": "^8.13.1",
+    "gatsby-source-filesystem": "^5.13.1",
+    "gatsby-transformer-remark": "^6.13.1",
     "gatsby-transformer-sharp": "^5.13.1",
-    "gh-pages": "^3.1.0",
-    "lodash": "^4.17.21",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "react-helmet": "^6.1.0",
-    "reading-time": "^2.0.0-1"
+    "medium-zoom": "^1.1.0",
+    "prismjs": "^1.29.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-icons": "^5.0.1"
   },
   "devDependencies": {
-    "contentful-import": "^8.3.2",
-    "gatsby-provision-contentful": "^0.0.5",
-    "netlify-cli": "^10.0.0",
-    "dotenv": "^16.4.1"
+    "@types/node": "^20.11.8",
+    "@types/react": "^18.2.48",
+    "@types/react-dom": "^18.2.18",
+    "dotenv": "^16.4.1",
+    "prettier": "^3.2.4",
+    "typescript": "^5.3.3",
+    "yarn-upgrade-all": "^0.7.2"
   },
-  "engines": {
-    "node": ">=20.0.0"
-  },
-  "homepage": "https://github.com/contentful/starter-gatsby-blog#readme",
   "keywords": [
     "gatsby",
-    "contentful",
-    "starter"
+    "ferry suhandri",
+    "solok",
+    "sumatera barat",
+    "advotics",
+    "jatis",
+    "ix korong",
+    "lubuk sikarah",
+    "software engineer"
   ],
   "license": "MIT",
-  "main": "n/a",
+  "homepage": "https://ferry.vercel.app",
+  "scripts": {
+    "build": "gatsby build",
+    "develop": "tsc --noEmit && gatsby develop -H 0.0.0.0",
+    "clean-develop": "gatsby clean && tsc --noEmit && gatsby develop -H 0.0.0.0",
+    "clean-build": "gatsby clean && gatsby build",
+    "format": "prettier --write src/**/*.{js,jsx,ts,tsx}",
+    "build-serve": "tsc --noEmit && gatsby build && gatsby serve -H 0.0.0.0",
+    "clean-build-serve": "gatsby clean && tsc --noEmit && gatsby build && gatsby serve -H 0.0.0.0",
+    "serve": "gatsby serve -H 0.0.0.0",
+    "clean": "gatsby clean",
+    "disable-telemetry": "gatsby telemetry --disable",
+    "typecheck": "tsc --noEmit",
+    "upgrade-all": "yarn yarn-upgrade-all",
+    "test": "echo \"Write tests! -> https://gatsby.dev/unit-testing\""
+  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/contentful/starter-gatsby-blog.git"
+    "url": "https://github.com/7sferry/gatsbyan"
   },
-  "scripts": {
-    "dev": "gatsby develop",
-    "build": "gatsby info --clipboard && gatsby build",
-    "heroku-postbuild": "gatsby build",
-    "serve": "gatsby serve",
-    "postinstall": "node ./bin/hello.js",
-    "setup": "node ./bin/setup.js",
-    "netlify:login": "netlify login",
-    "netlify:deploy": "netlify deploy -d public -p",
-    "gatsby-provision": "gatsby-provision-contentful --contentful-data-path='./contentful/export.json' --space-id=$CONTENTFUL_SPACE_ID --management-token=$CONTENTFUL_MANAGEMENT_TOKEN"
-  }
+  "bugs": {
+    "url": "https://github.com/7sferry/gatsbyan/issues"
+  },
+  "packageManager": "yarn@4.1.1",
+  "trustedDependencies": [
+    "contentful",
+    "core-js",
+    "core-js-pure",
+    "es5-ext",
+    "gatsby",
+    "gatsby-cli",
+    "gatsby-telemetry",
+    "lmdb",
+    "msgpackr-extract",
+    "sharp"
+  ]
 }

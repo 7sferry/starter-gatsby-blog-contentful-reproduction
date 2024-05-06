@@ -1,73 +1,114 @@
-# Contentful Gatsby Starter Blog
+# gatsbyan [![Website](https://img.shields.io/website?down_color=lightgrey&down_message=offline&style=plastic&up_color=green&up_message=online&url=https%3A%2F%2Fferry.vercel.app%2F)](https://ferry.vercel.app/) ![GitHub top language](https://img.shields.io/github/languages/top/7sferry/gatsbyan?style=plastic) ![GitHub](https://img.shields.io/github/license/7sferry/gatsbyan?style=plastic)
 
-Create a [Gatsby](http://gatsbyjs.com/) blog powered by [Contentful](https://www.contentful.com).
+This is template for GatsbyJS that I use on production for my personal blog at https://ferry.now.sh
 
-![An article page of the starter blog](./screenshot.png "An article page of the starter blog")
+For a clean template, take a look at https://github.com/7sferry/Gatsbyan1.0
 
-Static sites are scalable, secure and have very little required maintenance. They come with a drawback though. Not everybody feels good editing files, building a project and uploading it somewhere. This is where Contentful comes into play.
+![](https://github.com/7sferry/Gatsbyan1.0/blob/master/static/example.png?raw=true)
 
-With Contentful and Gatsby you can connect your favorite static site generator with an API that provides an easy to use interface for people writing content and automate the publishing using services like [Travis CI](https://travis-ci.org/) or [Netlify](https://www.netlify.com/).
+## Features:
 
-## Features
+- Contentful CMS
+- Comment
+- Tags
+- SEO
+- Archives by date
+- Pagination
+- Dark Mode
+- Blog Search
+- Full PWA
+- Many more...
 
-- Simple content model and structure. Easy to adjust to your needs.
-- Use the [synchronization feature](https://www.contentful.com/developers/docs/references/content-delivery-api/#/reference/synchronization) of our [Delivery API](https://www.contentful.com/developers/docs/references/content-delivery-api/).
-- Responsive/adaptive images via [gatsby-plugin-image](https://www.gatsbyjs.org/packages/gatsby-plugin-image/) and our [Images API](https://www.contentful.com/developers/docs/references/content-delivery-api/#/reference/synchronization/initial-synchronization-of-entries-of-a-specific-content-type).
+## Tech used:
 
-## Getting started
+- GatsbyJS
+- Typescript
+- Contentful CMS
+- Bootstrap
+- Algolia
+- Google Analytics
+- Prism
+- many others, you can check the pakcage.json
 
-See our [official Contentful getting started guide](https://www.contentful.com/developers/docs/tutorials/general/get-started/).
+## Requirements:
 
-### Get the source code and install dependencies.
+- Node JS - I used Node v18.8.1
+- Gatsby CLI - I used gatsby-cli v2.10.10
+- Typescript - I used Typescript 5.0.4
+- Git
+- Contentful CMS account
+- Google account - optional for analytics and analytics reporter
+- Algolia account - optional for blog search
 
-```
-$ git clone https://github.com/contentful/starter-gatsby-blog.git
-$ npm install
-```
+## Step to Install:
 
-Or use Gatsby Cloud
+- run 'npm install'
+- create file .env on your root projects directory
+- set your spaceId and token from contenful CMS on '.env'
+  (you can look at [here](https://github.com/7sferry/gatsbyan#step-to-get-spaceid-and-token))
+- you could change every properties on config at 'config.ts' or modify SEO variables at '/src.components/SEO.js'
+- you also could change utterances config for comment section at '/src.components/Comment.tsx' or remove it if you don't
+  want.
+- if you use Algolia, you must specify GATSBY_ALGOLIA_APP_ID, GATSBY_ALGOLIA_INDEX_NAME, GATSBY_ALGOLIA_SEARCH_KEY,
+  ALGOLIA_ADMIN_KEY on '.env'. Or turn it off on gatsby-config and gatsby-node & remove search folder inside 'templates'
+  folder and Algolia.tsx on utils if you don't use it.
+- if you use Analytics & Analytics Reporter, you must specify ANALYTICS_PRIVATE_KEY, ANALYTICS_VIEW_ID,
+  ANALYTICS_GA4, ANALYTICS_TRACKING_ID, ANALYTICS_EMAIL on '.env'. Or turn it off on gatsby-config & remove
+  AnalyticsPage.tsx and AnalyticsPage on RightSidebar.tsx if you don't use it.
+- execute 'npm run develop' on cli
+- your site will be run on http://localhost:8000
 
-Use Deploy Now to get started in [Gatsby Cloud](https://gatsbyjs.com/products/cloud):
+## Step to get SpaceId and Token:
 
-[<img src="https://www.gatsbyjs.com/deploynow.png" alt="Deploy to Gatsby Cloud">](https://www.gatsbyjs.com/dashboard/deploynow?url=https://github.com/contentful/starter-gatsby-blog)
+- after login and open the homepage content, click burger menu on the top left
 
-If you use Deploy Now, Gatsby Cloud will run the `gatsby-provision` script on your behalf, if you choose, after you Quick Connected to your empty Contentful Space. That script will add the necessary content models and content to support this site.
+![](https://github.com/7sferry/Gatsbyan1.0/blob/master/static/click%20burger%20menu.jpg?raw=true)
 
+- create new space
 
-Or use the [Gatsby CLI](https://www.npmjs.com/package/gatsby-cli).
+![](https://github.com/7sferry/Gatsbyan1.0/blob/master/static/2.%20create%20space.jpg?raw=true)
 
-```
-$ gatsby new contentful-starter-blog https://github.com/contentful/starter-gatsby-blog/
-```
+- choose space type
 
-### Set up of the needed content model and create a configuration file
+![](https://github.com/7sferry/Gatsbyan1.0/blob/master/static/3.%20choose%20space%20type.jpg?raw=true)
 
-This project comes with a Contentful setup command `npm run setup`.
+- write down your space name and choose 'create an example' then choose blog tab and click proceed
 
-This command will ask you for a space ID, and access tokens for the Contentful Management and Delivery API and then import the needed content model into the space you define and write a config file (`./.contentful.json`).
+![](https://github.com/7sferry/Gatsbyan1.0/blob/master/static/4.%20write%20down%20your%20space%20name%20and%20choose%20create%20an%20example%20and%20choose%20blog.jpg?raw=true)
 
-`npm run setup` automates that for you but if you want to do it yourself rename `.contentful.json.sample` to `.contentful.json` and add your configuration in this file.
+- after everything has been set, go to content tab and you will see 4 default contents
 
-## Crucial Commands
+![](https://github.com/7sferry/Gatsbyan1.0/blob/master/static/5.%20go%20to%20content%20tab%20and%20there%20shoulde%20be%204%20default%20contents.png?raw=true)
 
-### `npm run dev`
+- go to media tab and publish all draft images (by default heroImage is required and you can't build your site with
+  unpublished images)
 
-Run the project locally with live reload in development mode.
+![](https://github.com/7sferry/Gatsbyan1.0/blob/master/static/6.%20go%20to%20media%20tab%20and%20publish%20all%20images.png?raw=true)
 
-### `npm run build`
+- open setting tab and choose 'API keys'. Click 'Add api key' on the top right. Copy space ID and token to your '.env'
+  file you created before
 
-Run a production build into `./public`. The result is ready to be put on any static hosting you prefer.
+![](https://github.com/7sferry/Gatsbyan1.0/blob/master/static/7.%20open%20setting%20and%20add%20api%20key%20copy-paste%20spaceid%20and%20token%20to%20env.jpg?raw=true)
 
-### `npm run serve`
+- execute 'npm run develop' on cli
+- now you should be able to access your content at http://localhost:8000
 
-Spin up a production-ready server with your blog. Don't forget to build your page beforehand.
+## via DockerFile
 
-## Deployment
+to run this with docker, execute `docker build -t yarn-gatsbyan .`
+and `docker run -p 8000:8000 --rm -m 2g --cpus 2 yarn-gatsbyan`.
 
-See the [official Contentful getting started guide](https://www.contentful.com/developers/docs/tutorials/general/get-started/).
+## via Docker Compose
 
-## Contribution
+to run this using docker compose, execute `docker compose -f compose.yaml up -d`
 
-Feel free to open pull requests to fix bugs. If you want to add features, please have a look at the [original version](https://github.com/contentful-userland/gatsby-contentful-starter). It is always open to contributions and pull requests.
+You can deploy your site to any static site hosting like netlify, vercel, or anywhere. There is webhook on netlify
+and you can set this up later to your site hosting for content update everytime you publish your content.
 
-You can learn more about how Contentful userland is organized by visiting [our about repository](https://github.com/contentful-userland/about).
+here is the [google page speed insight](https://developers.google.com/speed/pagespeed/insights/) score for both mobile
+and desktop
+![](https://github.com/7sferry/Gatsbyan1.0/blob/master/static/mobile.png?raw=true)
+
+![](https://github.com/7sferry/Gatsbyan1.0/blob/master/static/desktop.png?raw=true)
+
+If you having trouble setting this up, don't hesitate to contact me 😎
