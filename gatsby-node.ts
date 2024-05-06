@@ -8,7 +8,7 @@ import { AllContentfulBlogPost } from './src/types/DataTypes'
 import type { GatsbyNode } from 'gatsby'
 
 export const createPages: GatsbyNode['createPages'] = ({ graphql, actions, reporter }: any) => {
-  const { createPage, createRedirect, createSlice } = actions
+  const { createPage } = actions
 
   return new Promise((resolve, reject) => {
     resolve(
@@ -59,7 +59,7 @@ export const createPages: GatsbyNode['createPages'] = ({ graphql, actions, repor
         //   component: path.resolve(`./src/components/PaginationElement.tsx`),
         // });
 
-        const postSizeByTag = new Map<string, number>()
+        // const postSizeByTag = new Map<string, number>()
         const {
           allContentfulBlogPost: { nodes: posts },
         } = result.data
@@ -80,8 +80,8 @@ export const createPages: GatsbyNode['createPages'] = ({ graphql, actions, repor
             component: path.resolve('./src/templates/blog-post.tsx'),
             context: {
               slug: node.slug,
-              defer: defer,
             },
+            defer: defer,
           })
         })
 
