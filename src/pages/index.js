@@ -46,12 +46,12 @@ export const pageQuery = graphql`
   }
 `
 
-export async function config() {
-  // Optionally use GraphQL here
-
-  return ({ params }) => {
-    return {
-      defer: true,
-    }
-  }
-}
+// export async function config() {
+//   // Optionally use GraphQL here
+//
+//   return ({ params }) => {
+//     return {
+//       defer: true,
+//     }
+//   }
+// }
