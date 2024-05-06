@@ -14,7 +14,6 @@
     "gatsby-plugin-purgecss": "^6.2.1",
     "gatsby-plugin-sharp": "^5.13.1",
     "gatsby-plugin-sitemap": "^6.13.1",
-    "gatsby-remark-images-contentful": "^6.13.1",
     "gatsby-remark-prismjs": "^7.13.1",
     "gatsby-source-contentful": "^8.13.1",
     "gatsby-source-filesystem": "^5.13.1",
@@ -26,6 +25,9 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^5.0.1"
+  },
+  "resolutions": {
+    "graphql": "^16.8.1"
   },
   "devDependencies": {
     "@types/node": "^20.11.8",
