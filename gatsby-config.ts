@@ -9,14 +9,10 @@ import { config } from 'dotenv'
 
 config()
 
-function isProduction() {
-  return process.env.NODE_ENV === 'production' || !process.env.PREVIEW_TOKEN
-}
-
 const contentfulConfig = {
-  spaceId: process.env.SPACEID,
-  accessToken: isProduction() ? process.env.TOKEN : process.env.PREVIEW_TOKEN,
-  host: isProduction() ? 'cdn.contentful.com' : 'preview.contentful.com',
+  spaceId: process.env.CONTENTFUL_SPACE_ID,
+  accessToken: process.env.CONTENTFUL_ACCESS_TOKEN,
+  host: 'cdn.contentful.com',
   // pageLimit: 100,
   // assetDownloadWorkers: 25,
   // downloadLocal: true,
